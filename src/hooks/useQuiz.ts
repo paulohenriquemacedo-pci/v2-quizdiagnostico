@@ -61,6 +61,37 @@ export function useQuiz() {
     }
   }, [state]);
 
+  // Submit to database when result is calculated and step changes to 'result' (Anonymous Completion)
+  useEffect(() => {
+    if (state.step === 'result' && state.result && !state.email && !state.name) {
+      const submitAnonymous = async () => {
+        try {
+          console.log('[useQuiz] Submitting anonymous result to database');
+          
+          const response = await submitQuizToDatabase({
+            name: 'Anônimo',
+            email: 'anonimo@sistemaacademia.com.br',
+            phone: '',
+            answers: state.answers,
+            result: state.result!,
+            researchPhase: state.researchPhase
+          });
+          
+          if (!response.success) {
+            console.error('[Quiz] Failed to save anonymous to database:', response.error);
+          } else {
+            console.log('[Quiz] Anonymous quiz saved to database successfully');
+          }
+        } catch (e) {
+          console.error('[Quiz] Error in anonymous submission:', e);
+        }
+      };
+      
+      submitAnonymous();
+      clearProgress();
+    }
+  }, [state.step, state.result, state.answers, state.researchPhase]);
+
   const startQuiz = useCallback(() => {
     setState(prev => ({ ...prev, step: 'context' }));
     console.log('[Quiz] Start clicked, moving to context question');
@@ -93,8 +124,13 @@ export function useQuiz() {
         console.log(`[Quiz] Moving to question ${prev.currentQuestion + 2}`);
         return { ...prev, currentQuestion: prev.currentQuestion + 1 };
       } else {
-        console.log('[Quiz] All questions answered, moving to email step');
-        return { ...prev, step: 'email' };
+        const result = calculateResult(prev.answers);
+        console.log('[Quiz] All questions answered, calculating result and transitioning to result directly');
+        return {
+          ...prev,
+          step: 'result',
+          result
+        };
       }
     });
   }, []);
