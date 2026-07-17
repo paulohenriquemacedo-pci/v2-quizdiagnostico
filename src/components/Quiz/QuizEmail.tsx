@@ -64,31 +64,36 @@ export function QuizEmail({ name, email, phone, onSubmit }: QuizEmailProps) {
     
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
-      // Pass the validated data directly to onSubmit
       onSubmit(localName.trim(), localEmail.trim(), localPhone);
     }
   };
 
   return (
-    <div className="min-h-screen bg-quiz-gradient flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        <div className="bg-card rounded-2xl shadow-quiz p-8 md:p-10 text-center">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative Glow Blobs */}
+      <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-violet-600/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="w-full max-w-lg z-10 animate-fade-in">
+        <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-800 shadow-2xl p-8 md:p-10 text-center relative">
           {/* Celebration Icon */}
-          <div className="text-6xl mb-4">🎯</div>
+          <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-4xl mx-auto mb-6">
+            🎯
+          </div>
           
           {/* Header */}
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            Você completou o diagnóstico!
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white mb-2 leading-tight">
+            Diagnóstico Finalizado!
           </h1>
-          <p className="text-muted-foreground mb-8">
-            Para receber seu resultado detalhado, preencha abaixo:
+          <p className="text-slate-400 text-sm md:text-base mb-8 max-w-sm mx-auto leading-relaxed">
+            Estamos prontos para processar seus escores. Insira seus dados para gerar e liberar o seu relatório personalizado:
           </p>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4 mb-6">
             {/* Name Field */}
             <div className="text-left">
-              <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">
+              <label htmlFor="name" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                 Seu nome
               </label>
               <input
@@ -97,20 +102,20 @@ export function QuizEmail({ name, email, phone, onSubmit }: QuizEmailProps) {
                 value={localName}
                 onChange={(e) => setLocalName(e.target.value)}
                 placeholder="Digite seu nome"
-                className={`w-full px-4 py-3 rounded-xl border-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                className={`w-full px-4 py-3.5 rounded-2xl border-2 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
                   errors.name
-                    ? 'border-destructive bg-destructive/10'
-                    : 'border-border focus:border-primary'
+                    ? 'border-red-500/50 bg-red-500/5'
+                    : 'border-slate-800 focus:border-violet-500'
                 }`}
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-destructive">{errors.name}</p>
+                <p className="mt-1.5 text-xs text-red-400 font-semibold">{errors.name}</p>
               )}
             </div>
 
             {/* Email Field */}
             <div className="text-left">
-              <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
+              <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                 Seu melhor email
               </label>
               <input
@@ -119,20 +124,20 @@ export function QuizEmail({ name, email, phone, onSubmit }: QuizEmailProps) {
                 value={localEmail}
                 onChange={(e) => setLocalEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className={`w-full px-4 py-3 rounded-xl border-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                className={`w-full px-4 py-3.5 rounded-2xl border-2 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
                   errors.email
-                    ? 'border-destructive bg-destructive/10'
-                    : 'border-border focus:border-primary'
+                    ? 'border-red-500/50 bg-red-500/5'
+                    : 'border-slate-800 focus:border-violet-500'
                 }`}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-destructive">{errors.email}</p>
+                <p className="mt-1.5 text-xs text-red-400 font-semibold">{errors.email}</p>
               )}
             </div>
 
             {/* WhatsApp Field */}
             <div className="text-left">
-              <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-1">
+              <label htmlFor="phone" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                 WhatsApp (com DDD)
               </label>
               <input
@@ -142,36 +147,36 @@ export function QuizEmail({ name, email, phone, onSubmit }: QuizEmailProps) {
                 onChange={handlePhoneChange}
                 placeholder="(62) 99999-9999"
                 maxLength={15}
-                className={`w-full px-4 py-3 rounded-xl border-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                className={`w-full px-4 py-3.5 rounded-2xl border-2 bg-slate-950 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
                   errors.phone
-                    ? 'border-destructive bg-destructive/10'
-                    : 'border-border focus:border-primary'
+                    ? 'border-red-500/50 bg-red-500/5'
+                    : 'border-slate-800 focus:border-violet-500'
                 }`}
               />
               {errors.phone && (
-                <p className="mt-1 text-sm text-destructive">{errors.phone}</p>
+                <p className="mt-1.5 text-xs text-red-400 font-semibold">{errors.phone}</p>
               )}
             </div>
 
-            {/* Benefits */}
-            <div className="py-4 space-y-3 text-left">
-              <div className="flex items-center gap-3 text-quiz-success">
-                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            {/* What is unlocked */}
+            <div className="py-4 border-t border-b border-slate-800/60 my-6 text-left space-y-3.5">
+              <div className="flex items-center gap-3 text-emerald-400">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-sm text-foreground">Resultado completo com seu perfil dominante</span>
+                <span className="text-sm font-semibold text-slate-350">Seu Perfil Dominante e intensidade de travamento</span>
               </div>
-              <div className="flex items-center gap-3 text-quiz-success">
-                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <div className="flex items-center gap-3 text-emerald-400">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-sm text-foreground">Análise detalhada dos padrões identificados</span>
+                <span className="text-sm font-semibold text-slate-350">Mapeamento dos Perfis Secundários e reações ao estresse</span>
               </div>
-              <div className="flex items-center gap-3 text-quiz-success">
-                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <div className="flex items-center gap-3 text-emerald-400">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-sm text-foreground">Dicas personalizadas para seu perfil</span>
+                <span className="text-sm font-semibold text-slate-350">Estratégias e próximos passos recomendados para o seu perfil</span>
               </div>
             </div>
 
@@ -179,28 +184,28 @@ export function QuizEmail({ name, email, phone, onSubmit }: QuizEmailProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-xl transition-all hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+              className="w-full py-4.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-lg rounded-2xl transition-all hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 duration-200"
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Processando...
+                  Calculando Resultados...
                 </>
               ) : (
-                'RECEBER MEU RESULTADO →'
+                'GERAR MEU DIAGNÓSTICO E RELATÓRIO →'
               )}
             </button>
           </form>
 
           {/* Privacy Link */}
-          <p className="text-xs text-muted-foreground">
-            Ao enviar, você concorda com nossa{' '}
-            <a href="#" className="underline hover:text-foreground transition-colors">
-              Política de Privacidade
-            </a>
+          <p className="text-xs text-slate-500 leading-normal">
+            Seus dados estão protegidos. Ao enviar, você concorda com nossos termos de uso e{' '}
+            <a href="#" className="underline hover:text-slate-400 transition-colors">
+              Políticas de Privacidade
+            </a>.
           </p>
         </div>
       </div>

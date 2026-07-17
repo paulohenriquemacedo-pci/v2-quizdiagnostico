@@ -17,10 +17,10 @@ export function calculateScores(answers: (number | null)[]): QuizScores {
 }
 
 export function getIntensity(score: number): string {
-  if (score >= 16) return 'Muito Forte';
-  if (score >= 13) return 'Forte';
-  if (score >= 9) return 'Moderado';
-  if (score >= 6) return 'Leve';
+  if (score >= 10) return 'Muito Forte';
+  if (score >= 8) return 'Forte';
+  if (score >= 5) return 'Moderado';
+  if (score >= 3) return 'Leve';
   return 'Ausente';
 }
 
@@ -47,10 +47,10 @@ export function calculateResult(answers: (number | null)[]): QuizResult {
   const [dominantCode, dominantScore] = sortedProfiles[0];
   const dominant = getProfileResult(dominantCode, dominantScore);
   
-  // Find secondary profiles (score >= 15, excluding dominant)
+  // Find secondary profiles (score >= 5, excluding dominant)
   const secondary = sortedProfiles
     .slice(1)
-    .filter(([, score]) => score >= 9)
+    .filter(([, score]) => score >= 5)
     .map(([code, score]) => getProfileResult(code, score));
 
   console.log('[Scoring] Dominant profile:', dominant.name, 'with score', dominant.score);

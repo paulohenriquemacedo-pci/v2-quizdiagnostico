@@ -32,12 +32,12 @@ export const profileResults: Record<string, ProfileResultContent> = {
     icon: "✨",
     whatItMeans: [
       "Seu padrão atual tende a envolver ciclos longos de revisão antes de considerar algo pronto. É comum reescrever trechos várias vezes, adiar entregas para 'melhorar mais um pouco' e sentir desconforto ao mostrar trabalhos em andamento.",
-      "Esse comportamento, em muitos casos, está associado a uma expectativa elevada sobre a qualidade do output. O resultado é que versões finalizadas demoram a existir — enquanto outras pessoas com menos refinamento já submeteram seus trabalhos.",
+      "Esse comportamento, em muitos casos, está associado a uma expectativa elevada sobre a qualidade do texto produzido. O resultado é que versões finalizadas demoram a existir — enquanto outras pessoas com menos refinamento já submeteram seus trabalhos.",
       "Sob pressão de prazos, pode surgir tensão. É possível que haja preferência por trabalhar sozinho para manter controle sobre o resultado. Projetos são abandonados ou pausados quando não atingem o padrão imaginado.",
       "O ponto central: o comportamento de refinamento excessivo frequentemente atrasa a geração de evidência concreta de progresso (versões entregues, textos submetidos)."
     ],
-    coreObstacle: "Uma hipótese comum nesse padrão é a crença de que 'se não estiver excelente, não vale entregar'. Na prática acadêmica, output entregue tende a gerar mais resultado do que output perfeito não finalizado. A tese precisa ser aprovada — e isso exige versões concretas, não ideais abstratos.",
-    coreObstacleMetric: "Progresso real = evidência verificável (output entregue).",
+    coreObstacle: "Uma hipótese comum nesse padrão é a crença de que 'se não estiver excelente, não vale entregar'. Na prática acadêmica, o texto entregue tende a gerar mais resultado do que o rascunho perfeito não finalizado. A tese precisa ser aprovada — e isso exige versões concretas, não ideais abstratos.",
+    coreObstacleMetric: "Progresso real = evidência verificável (texto entregue).",
     immediatePractices: [
       {
         title: "1. CRITÉRIO DE SUFICIÊNCIA",
@@ -83,15 +83,15 @@ export const profileResults: Record<string, ProfileResultContent> = {
       "Seu padrão atual tende a envolver múltiplos projetos em andamento simultaneamente. É comum ter várias abas abertas, documentos iniciados em diferentes estágios e compromissos aceitos que competem por atenção.",
       "Esse comportamento frequentemente gera a sensação de estar ocupado — mas ao revisar a semana, o progresso nos projetos prioritários pode ser menor do que o esperado. Muitos itens ficam em 70-80% e poucos chegam a 100%.",
       "Pode haver dificuldade em manter foco em uma única tarefa por períodos longos (1-2 horas). Tarefas secundárias (organizar, formatar, responder mensagens) às vezes ocupam espaço do trabalho de escrita profunda.",
-      "O ponto central: alternar entre contextos tem um custo cognitivo. Profundidade em menos projetos tende a gerar mais output finalizado do que atenção distribuída em muitos."
+      "O ponto central: alternar entre contextos tem um custo cognitivo. Profundidade em menos projetos tende a gerar mais escrita finalizada do que atenção distribuída em muitos."
     ],
-    coreObstacle: "Uma hipótese comum nesse padrão é associar ocupação com produtividade. Na prática, output verificável (texto entregue, artigo submetido) é o que conta. Concentrar energia em menos frentes tende a acelerar a finalização.",
+    coreObstacle: "Uma hipótese comum nesse padrão é associar ocupação com produtividade. Na prática, a escrita verificável (texto entregue, artigo submetido) é o que conta. Concentrar energia em menos frentes tende a acelerar a finalização.",
     coreObstacleMetric: "Progresso real = evidência verificável (projetos finalizados).",
     immediatePractices: [
       {
         title: "1. EXPERIMENTO: 1 PROJETO PRIORITÁRIO",
-        description: "Por uma semana, teste eleger um único projeto como prioridade máxima. Os outros ficam em pausa consciente. Observe se isso muda a quantidade de output gerado nesse projeto específico.",
-        successCriteria: "Projeto prioritário definido; output da semana comparado com semanas anteriores."
+        description: "Por uma semana, teste eleger um único projeto como prioridade máxima. Os outros ficam em pausa consciente. Observe se isso muda a quantidade de escrita produzida nesse projeto específico.",
+        successCriteria: "Projeto prioritário definido; volume de escrita da semana comparado com semanas anteriores."
       },
       {
         title: "2. AMBIENTE DE FOCO",
@@ -106,7 +106,7 @@ export const profileResults: Record<string, ProfileResultContent> = {
       {
         title: "4. BLOCOS DE DEEP WORK",
         description: "Teste 2-3x por semana fazer blocos de 60-90 minutos sem interrupções. Comece com o tempo que parecer viável e ajuste. O objetivo é criar períodos de imersão no trabalho prioritário.",
-        successCriteria: "Blocos agendados e executados; output do bloco registrado."
+        successCriteria: "Blocos agendados e executados; volume de escrita do bloco registrado."
       },
       {
         title: "5. PAUSA EM NOVOS COMPROMISSOS",
@@ -132,7 +132,7 @@ export const profileResults: Record<string, ProfileResultContent> = {
       "Seu padrão atual tende a envolver picos intensos de produtividade próximos a deadlines, seguidos de períodos com pouca atividade. É comum a percepção de que 'trabalho melhor sob pressão'.",
       "Esse comportamento pode gerar resultados — muitas pessoas com esse padrão entregam trabalhos de qualidade. O custo tende a aparecer em desgaste elevado, recuperação necessária após sprints intensos e dificuldade em manter ritmo consistente.",
       "Pode haver tendência a adiar o início de projetos, aguardando o 'momento certo' ou a pressão do prazo. O período entre receber uma tarefa e começar efetivamente pode ser longo.",
-      "O ponto central: a urgência funciona como ativador — mas depender exclusivamente dela limita a quantidade e qualidade do output ao longo do tempo."
+      "O ponto central: a urgência funciona como ativador — mas depender exclusivamente dela limita a quantidade e qualidade da escrita ao longo do tempo."
     ],
     coreObstacle: "Uma hipótese comum é que a associação urgência-produtividade foi reforçada ao longo do tempo. O desafio é criar estruturas que ativem o trabalho sem depender do pânico de deadlines iminentes.",
     coreObstacleMetric: "Progresso real = evidência verificável (entregas distribuídas, não apenas sob pressão).",
@@ -145,12 +145,12 @@ export const profileResults: Record<string, ProfileResultContent> = {
       {
         title: "2. SPRINTS CURTOS COM RECOMPENSA",
         description: "Experimente trabalhar em blocos de 25-30 minutos seguidos de uma pausa ou recompensa pequena. O objetivo é criar ciclos de ativação mais frequentes, sem esperar a urgência final.",
-        successCriteria: "Sprints executados; output por sprint registrado."
+        successCriteria: "Sprints executados; volume de escrita por sprint registrado."
       },
       {
         title: "3. SESSÕES DE CO-WORKING",
-        description: "Teste agendar sessões regulares de trabalho com alguém — presencial ou online. Horário fixo, compromisso mútuo. A presença de outra pessoa pode funcionar como ativador.",
-        successCriteria: "Sessão agendada e executada; output da sessão comparado com trabalho solo."
+        description: "Teste agendar sessões regulares de trabalho com alguém — presencial ou online. Horário fixo, compromisso mutuo. A presença de outra pessoa pode funcionar como ativador.",
+        successCriteria: "Sessão agendada e executada; texto produzido na sessão comparado com trabalho solo."
       },
       {
         title: "4. REGRA DOS 10 MINUTOS",
@@ -198,7 +198,7 @@ export const profileResults: Record<string, ProfileResultContent> = {
       },
       {
         title: "3. PRAZO PARA REVISÃO BIBLIOGRÁFICA",
-        description: "Defina uma data limite para a fase de pesquisa de cada seção (ex: 1-2 semanas como sugestão). Após esse prazo, escreva com o que tem. Informação adicional pode ser integrada em revisões futuras.",
+        description: "Defina uma data limite para a fase de pesquisa de cada seção (ex: 1-2 semanas como sugestão). Após esse prazo, escreva com o que tem. Informação adicional pode ser integrada em revisões futures.",
         successCriteria: "Prazo definido e cumprido; escrita iniciada na data marcada."
       },
       {
@@ -207,8 +207,8 @@ export const profileResults: Record<string, ProfileResultContent> = {
         successCriteria: "Rascunho escrito antes de pesquisa adicional; lacunas identificadas por escrito."
       },
       {
-        title: "5. MÉTRICA DE OUTPUT",
-        description: "Acompanhe páginas escritas por semana como métrica principal — não artigos lidos ou PDFs salvos. Output verificável é a evidência de progresso que conta.",
+        title: "5. MÉTRICA DE PRODUÇÃO TEXTUAL",
+        description: "Acompanhe páginas escritas por semana como métrica principal — não artigos lidos ou PDFs salvos. O texto finalizado é a evidência de progresso que conta.",
         successCriteria: "Páginas escritas registradas semanalmente; tendência observada."
       }
     ],
@@ -217,7 +217,7 @@ export const profileResults: Record<string, ProfileResultContent> = {
     ctaBullets: [
       "📊 Auditoria de tempo: mapeie a proporção atual pesquisa vs. escrita",
       "📋 Protocolo de 15 dias: sistema 'Write-First' com pesquisa direcionada",
-      "🎯 Templates: Matriz de suficiência, tracker de output, ritual de transição pesquisa→escrita"
+      "🎯 Templates: Matriz de suficiência, rastreador de escrita, ritual de transição pesquisa→escrita"
     ]
   },
   
@@ -230,15 +230,15 @@ export const profileResults: Record<string, ProfileResultContent> = {
       "Seu padrão atual tende a envolver variação significativa de produtividade baseada no estado emocional do momento. É comum sentir necessidade de estar 'inspirado' ou 'no mood certo' para trabalhar efetivamente.",
       "Esse comportamento pode gerar ciclos de alta produtividade seguidos de períodos improdutivos. Projetos podem ser abandonados quando o entusiasmo inicial diminui. Há busca frequente por novos métodos, ferramentas ou estímulos.",
       "Tarefas percebidas como 'chatas' ou rotineiras tendem a ser adiadas. A motivação funciona como pré-requisito para ação, em vez de consequência dela.",
-      "O ponto central: na maioria dos contextos profissionais, a ação precede a motivação — não o contrário. Esperar pelo estado emocional 'certo' tende a reduzir a consistência de output."
+      "O ponto central: na maioria dos contextos profissionais, a ação precede a motivação — não o contrário. Esperar pelo estado emocional 'certo' tende a reduzir a consistência de escrita."
     ],
-    coreObstacle: "Uma hipótese comum é a crença de que 'se não estou motivado, não consigo produzir'. Na prática, muitas pessoas produzem output consistente independentemente do humor — através de rotinas e estruturas externas.",
-    coreObstacleMetric: "Progresso real = evidência verificável (consistência de output, não picos esporádicos).",
+    coreObstacle: "Uma hipótese comum é a crença de que 'se não estou motivado, não consigo produzir'. Na prática, muitas pessoas produzem escrita consistente independentemente do humor — através de rotinas e estruturas externas.",
+    coreObstacleMetric: "Progresso real = evidência verificável (consistência de escrita, não picos esporádicos).",
     immediatePractices: [
       {
         title: "1. HORÁRIO FIXO (EXPERIMENTO)",
         description: "Teste definir um horário fixo de trabalho (ex: segunda a sexta, 9h-11h como ponto de partida). Nesse horário, você trabalha independentemente do estado emocional. Comece com blocos menores e aumente gradualmente.",
-        successCriteria: "Horário cumprido por 5 dias; output registrado independente do humor."
+        successCriteria: "Horário cumprido por 5 dias; escrita registrada independente do humor."
       },
       {
         title: "2. RITUAL DE INÍCIO",
@@ -248,7 +248,7 @@ export const profileResults: Record<string, ProfileResultContent> = {
       {
         title: "3. COMPROMISSO MÍNIMO",
         description: "Quando a resistência for alta, comprometa-se com apenas 5-10 minutos. Configure timer. Se depois quiser parar, OK. O início é frequentemente a parte mais difícil.",
-        successCriteria: "Timer de 5-10 min iniciado; continuação ou parada registrada."
+        successCriteria: "Timer de 5-10 min iniciado; escrita registrada."
       },
       {
         title: "4. REGISTRO DE CONSISTÊNCIA",
@@ -258,7 +258,7 @@ export const profileResults: Record<string, ProfileResultContent> = {
       {
         title: "5. EXPECTATIVA REALISTA SOBRE TÉDIO",
         description: "Reconheça que parte significativa do trabalho acadêmico não será empolgante — e isso é esperado. A capacidade de trabalhar apesar do tédio é uma habilidade, não um defeito.",
-        successCriteria: "Trabalho executado em tarefa 'chata'; output registrado."
+        successCriteria: "Trabalho executado em tarefa 'chata'; progresso registrado."
       }
     ],
     transitionText: "Para quem opera nesse padrão, o Diagnóstico Completo oferece um sistema de rotinas personalizadas que cria ação independente do estado emocional.",
@@ -281,13 +281,13 @@ export const profileResults: Record<string, ProfileResultContent> = {
       "Pode haver dificuldade em recusar pedidos ou delegar tarefas. Fins de semana são usados para 'compensar' o que não foi possível durante a semana. Blocos longos de foco (3+ horas) são raros.",
       "O ponto central: sem limites claros, a agenda é preenchida por demandas externas. Proteger tempo para trabalho prioritário exige decisões ativas de recusa."
     ],
-    coreObstacle: "Uma hipótese comum é associar estar ocupado com ser produtivo. Na prática, horas trabalhadas e output gerado são métricas diferentes. Foco em menos atividades tende a gerar mais resultado do que dispersão em muitas.",
-    coreObstacleMetric: "Progresso real = evidência verificável (output em projetos prioritários, não horas ocupadas).",
+    coreObstacle: "Uma hipótese comum é associar estar ocupado com ser produtivo. Na prática, horas trabalhadas e escrita finalizada são métricas diferentes. Foco em menos atividades tende a gerar mais resultado do que dispersão em muitas.",
+    coreObstacleMetric: "Progresso real = evidência verificável (escrita em projetos prioritários, não horas ocupadas).",
     immediatePractices: [
       {
         title: "1. BLOCO PROTEGIDO (EXPERIMENTO)",
         description: "Teste bloquear 2-3x por semana períodos de 2-3 horas para trabalho prioritário. Trate como compromisso inegociável — reuniões e pedidos não entram. Comece com 1x por semana e aumente.",
-        successCriteria: "Bloco agendado e protegido; output do bloco registrado."
+        successCriteria: "Bloco agendado e protegido; volume de escrita do bloco registrado."
       },
       {
         title: "2. RESPOSTA PADRÃO TEMPORÁRIA",
