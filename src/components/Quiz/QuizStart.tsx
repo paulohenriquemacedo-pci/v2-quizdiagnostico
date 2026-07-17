@@ -79,9 +79,9 @@ export function QuizStart({ onStart }: QuizStartProps) {
           {/* CTA Button */}
           <button
             onClick={handleStart}
-            className="w-full md:w-auto px-12 py-4.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-lg rounded-2xl transition-all hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(124,58,237,0.3)] duration-200"
+            className="w-full md:w-auto px-16 py-5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-extrabold text-xl sm:text-2xl rounded-2xl transition-all hover:scale-[1.03] hover:shadow-[0_0_35px_rgba(124,58,237,0.45)] duration-200 uppercase tracking-wide"
           >
-            INICIAR MEU DIAGNÓSTICO →
+            QUERO DESCOBRIR MEU PERFIL AGORA →
           </button>
         </div>
       </div>

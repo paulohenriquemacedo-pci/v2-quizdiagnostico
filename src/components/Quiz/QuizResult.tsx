@@ -728,6 +728,26 @@ export function QuizResult({ result, email, name, onReset }: QuizResultProps) {
                 <span className="text-[9px] font-black text-white bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 px-1 rounded">ELO</span>
               </div>
             </div>
+
+            {/* Trust Badges */}
+            <div className="flex flex-wrap justify-center gap-3 mt-4 pt-4 border-t border-slate-900/60 text-slate-400 text-[10px] sm:text-xs">
+              <div className="flex items-center gap-1.5">
+                <span>🔒</span>
+                <span>Pagamento 100% seguro</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span>✓</span>
+                <span>Acesso imediato</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span>💳</span>
+                <span>Parcelamento em até 12x</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span>🛡️</span>
+                <span>Garantia de 7 dias</span>
+              </div>
+            </div>
           </div>
 
           {/* ISBN Registration Block */}
@@ -736,32 +756,12 @@ export function QuizResult({ result, email, name, onReset }: QuizResultProps) {
               src="/ISBN_LIVRO_OK.jpg" 
               alt="Registro ISBN do livro Pesquisador Produtivo" 
               loading="lazy"
-              className="max-w-[240px] w-full mx-auto mb-4 rounded-lg border border-slate-800 bg-slate-950/40 shadow-md p-1"
+              className="max-w-[360px] w-full mx-auto mb-4 rounded-lg border border-slate-800 bg-slate-950/40 shadow-md p-1"
             />
             <p className="leading-relaxed">
               <strong className="text-slate-400 uppercase tracking-widest text-[9px] block mb-1">Metodologia Baseada em Obra Registrada</strong> 
               O sistema de cálculo que gerou seu laudo é a aplicação prática do livro <em>'Pesquisador Produtivo'</em> (Registrado e Catalogado na Câmara Brasileira do Livro). Fonte Primária: <strong>ISBN 978-65-989051-0-1</strong>. Você está adquirindo as ferramentas oficiais baseadas nesta metodologia.
             </p>
-          </div>
-
-          {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-slate-400 text-xs mb-8 border-b border-slate-800/40 pb-6">
-            <div className="flex items-center gap-1.5">
-              <span>🔒</span>
-              <span>Pagamento 100% seguro</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span>✓</span>
-              <span>Acesso imediato</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span>💳</span>
-              <span>Parcelamento em até 12x</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span>🛡️</span>
-              <span>Garantia de 7 dias</span>
-            </div>
           </div>
 
           {/* Garantia incondicional */}
@@ -840,7 +840,7 @@ export function QuizResult({ result, email, name, onReset }: QuizResultProps) {
           <div className="absolute top-0 right-0 w-32 h-32 bg-violet-600/10 rounded-full blur-2xl pointer-events-none" />
           <div className="relative z-10 max-w-xl mx-auto">
             <h4 className="text-base md:text-lg font-bold text-white mb-2 uppercase tracking-wider">
-              Continue para destravar a sua pesquisa acadêmica
+              COMECE A DESTRAVAR A SUA PESQUISA E APLIQUE HOJE MESMO A METODOLOGIA DO SISTEMA A.C.A.D.E.M.I.A
             </h4>
             <p className="text-xs text-slate-400 mb-6 leading-relaxed">
               Adquira agora o seu Diagnóstico Completo com todos os 4 bônus de implementação inclusos.
@@ -873,6 +873,26 @@ export function QuizResult({ result, email, name, onReset }: QuizResultProps) {
               </div>
               <div className="h-5 w-8 flex items-center justify-center bg-slate-900 rounded border border-slate-800 select-none">
                 <span className="text-[9px] font-black text-white bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 px-1 rounded">ELO</span>
+              </div>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="flex flex-wrap justify-center gap-3 mt-4 pt-4 border-t border-slate-900/60 text-slate-400 text-[10px] sm:text-xs">
+              <div className="flex items-center gap-1.5">
+                <span>🔒</span>
+                <span>Pagamento 100% seguro</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span>✓</span>
+                <span>Acesso imediato</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span>💳</span>
+                <span>Parcelamento em até 12x</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span>🛡️</span>
+                <span>Garantia de 7 dias</span>
               </div>
             </div>
           </div>
