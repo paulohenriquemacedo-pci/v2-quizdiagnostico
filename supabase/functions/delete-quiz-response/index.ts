@@ -4,13 +4,11 @@ function getCorsHeaders(req: Request) {
   const origin = req.headers.get('Origin') || '';
 
   const isLocalhost = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-  const isLovablePreview = /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/.test(origin);
-  const isLovableApp = /^https:\/\/[a-z0-9-]+\.lovable\.app$/.test(origin);
   const isCustomDomain = /^https:\/\/([a-z0-9-]+\.)*sistemaacademia\.com\.br$/.test(origin);
 
-  const allowedOrigin = isLocalhost || isLovablePreview || isLovableApp || isCustomDomain
+  const allowedOrigin = isLocalhost || isCustomDomain
     ? origin
-    : 'https://quizdiagnostico.lovable.app';
+    : 'https://quiz.sistemaacademia.com.br';
   
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
