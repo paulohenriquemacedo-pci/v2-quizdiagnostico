@@ -84,6 +84,12 @@ export type Database = {
           utm_campaign: string | null
           utm_medium: string | null
           utm_source: string | null
+          privacy_consent: boolean
+          privacy_consent_at: string
+          privacy_policy_version: string | null
+          marketing_consent: boolean
+          marketing_consent_at: string | null
+          marketing_consent_text_version: string | null
         }
         Insert: {
           answers: Json
@@ -107,6 +113,12 @@ export type Database = {
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          privacy_consent?: boolean
+          privacy_consent_at?: string
+          privacy_policy_version?: string | null
+          marketing_consent?: boolean
+          marketing_consent_at?: string | null
+          marketing_consent_text_version?: string | null
         }
         Update: {
           answers?: Json
@@ -130,6 +142,12 @@ export type Database = {
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          privacy_consent?: boolean
+          privacy_consent_at?: string
+          privacy_policy_version?: string | null
+          marketing_consent?: boolean
+          marketing_consent_at?: string | null
+          marketing_consent_text_version?: string | null
         }
         Relationships: []
       }

@@ -1,20 +1,28 @@
 import { supabase } from '@/integrations/supabase/client';
 import { QuizResult } from '@/types/quiz.types';
 
-interface SubmitQuizParams {
+export interface SubmitQuizParams {
   name: string;
   email: string;
   phone: string;
   answers: (number | null)[];
   result: QuizResult;
   researchPhase: string;
+  privacyConsent: boolean;
+  privacyConsentAt?: string;
+  privacyPolicyVersion?: string;
+  marketingConsent: boolean;
+  marketingConsentAt?: string | null;
+  marketingConsentTextVersion?: string;
 }
 
 function getDeviceType(): string {
-  return /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop';
+  if (typeof window === 'undefined') return 'unknown';
+  return /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
 }
 
 function getUTMParams() {
+  if (typeof window === 'undefined') return {};
   const params = new URLSearchParams(window.location.search);
   return {
     utm_source: params.get('utm_source'),
@@ -24,16 +32,38 @@ function getUTMParams() {
 }
 
 export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ success: boolean; error?: string }> {
-  const { name, email, phone, answers, result, researchPhase } = params;
+  const {
+    name,
+    email,
+    phone,
+    answers,
+    result,
+    researchPhase,
+    privacyConsent,
+    privacyConsentAt,
+    privacyPolicyVersion = 'v1.0',
+    marketingConsent,
+    marketingConsentAt,
+    marketingConsentTextVersion = 'v1.0'
+  } = params;
+
+  if (!privacyConsent) {
+    return { success: false, error: 'O consentimento de privacidade é obrigatório para gerar o diagnóstico.' };
+  }
+
   const utmParams = getUTMParams();
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedName = name.trim().replace(/\s+/g, ' ');
+  const normalizedPhone = phone.replace(/\D/g, '');
+  const nowIso = new Date().toISOString();
 
   try {
-    console.log('[API] Submitting quiz to database...');
+    console.log('[API] Submitting lead quiz to database...');
 
     const insertData = {
-      email,
-      name,
-      phone,
+      email: normalizedEmail,
+      name: normalizedName,
+      phone: normalizedPhone,
       answers: answers.filter((a): a is number => a !== null),
       research_phase: researchPhase,
       score_perfeccionista: result.scores.A,
@@ -49,7 +79,13 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
       utm_source: utmParams.utm_source,
       utm_medium: utmParams.utm_medium,
       utm_campaign: utmParams.utm_campaign,
-      device_type: getDeviceType()
+      device_type: getDeviceType(),
+      privacy_consent: true,
+      privacy_consent_at: privacyConsentAt || nowIso,
+      privacy_policy_version: privacyPolicyVersion,
+      marketing_consent: marketingConsent,
+      marketing_consent_at: marketingConsent ? (marketingConsentAt || nowIso) : null,
+      marketing_consent_text_version: marketingConsentTextVersion
     };
 
     const { error } = await supabase
@@ -57,15 +93,14 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
       .insert(insertData);
 
     if (error) {
-      console.error('❌ Erro ao salvar:', error);
+      console.error('❌ Erro ao salvar no banco:', error);
       return { success: false, error: error.message };
     }
 
-    console.log('✅ Dados salvos no banco:', insertData);
-
+    console.log('✅ Dados salvos com sucesso no Supabase:', insertData);
     return { success: true };
   } catch (error) {
-    console.error('❌ Erro inesperado:', error);
-    return { success: false, error: 'Erro ao processar dados' };
+    console.error('❌ Erro inesperado ao salvar quiz:', error);
+    return { success: false, error: 'Não foi possível liberar seu diagnóstico agora. Verifique sua conexão e tente novamente.' };
   }
 }

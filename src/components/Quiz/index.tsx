@@ -10,6 +10,7 @@ import { ProfileCode } from '@/types/quiz.types';
 export function Quiz() {
   const {
     state,
+    isUnlocked,
     currentQuestion,
     currentAnswer,
     progress,
@@ -23,8 +24,7 @@ export function Quiz() {
     answerQuestion,
     nextQuestion,
     previousQuestion,
-    setUserInfo,
-    submitEmail,
+    submitUnlock,
     resetQuiz
   } = useQuiz();
 
@@ -66,8 +66,8 @@ export function Quiz() {
         result={mockResult}
         email="debug@sistemaacademia.com.br"
         name="Pesquisador Teste"
+        isUnlocked={true}
         onReset={() => {
-          // Remove debug parameters from URL when resetting to start fresh
           window.history.pushState({}, document.title, window.location.pathname);
           resetQuiz();
         }}
@@ -108,10 +108,10 @@ export function Quiz() {
     case 'email':
       return (
         <QuizEmail
-          name={state.name}
-          email={state.email}
-          phone={state.phone}
-          onSubmit={submitEmail}
+          initialName={state.name}
+          initialEmail={state.email}
+          initialPhone={state.phone}
+          onSubmit={submitUnlock}
         />
       );
     
@@ -122,6 +122,9 @@ export function Quiz() {
           result={state.result}
           email={state.email}
           name={state.name}
+          phone={state.phone}
+          isUnlocked={isUnlocked}
+          onUnlockSubmit={submitUnlock}
           onReset={resetQuiz}
         />
       );

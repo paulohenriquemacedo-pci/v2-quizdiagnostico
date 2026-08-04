@@ -43,6 +43,10 @@ interface QuizResponse {
   utm_medium: string | null;
   utm_campaign: string | null;
   device_type: string | null;
+  privacy_consent?: boolean;
+  privacy_consent_at?: string | null;
+  marketing_consent?: boolean;
+  marketing_consent_at?: string | null;
 }
 
 interface FunnelMetrics {
@@ -815,6 +819,7 @@ export default function Admin() {
                       <TableHead>WhatsApp</TableHead>
                       <TableHead>Perfil Dominante</TableHead>
                       <TableHead>Score</TableHead>
+                      <TableHead>Mkt</TableHead>
                       <TableHead>Device</TableHead>
                       <TableHead>UTM</TableHead>
                       <TableHead className="w-[50px]">Ações</TableHead>
@@ -848,6 +853,11 @@ export default function Admin() {
                           <span className="text-muted-foreground text-xs ml-1">
                             ({response.dominant_intensity})
                           </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={response.marketing_consent ? "default" : "outline"} className={response.marketing_consent ? "bg-emerald-600 hover:bg-emerald-700" : "text-muted-foreground"}>
+                            {response.marketing_consent ? "Sim" : "Não"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">

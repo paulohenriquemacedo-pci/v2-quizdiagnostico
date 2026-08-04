@@ -1,4 +1,4 @@
-﻿-- Create table for quiz submissions
+-- Create table for quiz submissions
 CREATE TABLE public.quiz_submissions (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
@@ -262,3 +262,11 @@ AS $$
   )
 $$;
 ALTER TABLE public.quiz_responses ADD COLUMN IF NOT EXISTS research_phase TEXT;
+ALTER TABLE public.quiz_responses
+  ADD COLUMN IF NOT EXISTS privacy_consent BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS privacy_consent_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS privacy_policy_version TEXT DEFAULT 'v1.0',
+  ADD COLUMN IF NOT EXISTS marketing_consent BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS marketing_consent_at TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS marketing_consent_text_version TEXT DEFAULT 'v1.0';
+

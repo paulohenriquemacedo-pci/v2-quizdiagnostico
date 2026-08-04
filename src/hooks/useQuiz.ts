@@ -6,6 +6,7 @@ import { submitQuizToDatabase } from '@/lib/api';
 import { trackQuizStart } from '@/lib/trackQuizStart';
 
 const STORAGE_KEY = 'quiz_progress';
+const UNLOCKED_KEY = 'quiz_unlocked_session';
 const TOTAL_QUESTIONS = questions.length;
 
 const initialState: QuizState = {
@@ -21,6 +22,7 @@ const initialState: QuizState = {
 
 function loadProgress(): QuizState {
   try {
+    if (typeof window === 'undefined') return initialState;
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
@@ -35,6 +37,7 @@ function loadProgress(): QuizState {
 
 function saveProgress(state: QuizState): void {
   try {
+    if (typeof window === 'undefined') return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     console.log('[Quiz] Progress saved to localStorage');
   } catch (error) {
@@ -44,8 +47,10 @@ function saveProgress(state: QuizState): void {
 
 function clearProgress(): void {
   try {
+    if (typeof window === 'undefined') return;
     localStorage.removeItem(STORAGE_KEY);
-    console.log('[Quiz] Progress cleared from localStorage');
+    sessionStorage.removeItem(UNLOCKED_KEY);
+    console.log('[Quiz] Progress cleared from storage');
   } catch (error) {
     console.error('[Quiz] Error clearing progress:', error);
   }
@@ -53,49 +58,21 @@ function clearProgress(): void {
 
 export function useQuiz() {
   const [state, setState] = useState<QuizState>(loadProgress);
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem(UNLOCKED_KEY) === 'true';
+  });
 
-  // Save progress whenever state changes (except for result step)
+  // Save progress whenever state changes (except for result step when unlocked)
   useEffect(() => {
     if (state.step !== 'result') {
       saveProgress(state);
     }
   }, [state]);
 
-  // Submit to database when result is calculated and step changes to 'result' (Anonymous Completion)
-  useEffect(() => {
-    if (state.step === 'result' && state.result && !state.email && !state.name) {
-      const submitAnonymous = async () => {
-        try {
-          console.log('[useQuiz] Submitting anonymous result to database');
-          
-          const response = await submitQuizToDatabase({
-            name: 'Anônimo',
-            email: 'anonimo@sistemaacademia.com.br',
-            phone: '',
-            answers: state.answers,
-            result: state.result!,
-            researchPhase: state.researchPhase
-          });
-          
-          if (!response.success) {
-            console.error('[Quiz] Failed to save anonymous to database:', response.error);
-          } else {
-            console.log('[Quiz] Anonymous quiz saved to database successfully');
-          }
-        } catch (e) {
-          console.error('[Quiz] Error in anonymous submission:', e);
-        }
-      };
-      
-      submitAnonymous();
-      clearProgress();
-    }
-  }, [state.step, state.result, state.answers, state.researchPhase]);
-
   const startQuiz = useCallback(() => {
     setState(prev => ({ ...prev, step: 'context' }));
     console.log('[Quiz] Start clicked, moving to context question');
-    // Track quiz start for funnel metrics
     trackQuizStart();
   }, []);
 
@@ -125,7 +102,7 @@ export function useQuiz() {
         return { ...prev, currentQuestion: prev.currentQuestion + 1 };
       } else {
         const result = calculateResult(prev.answers);
-        console.log('[Quiz] All questions answered, calculating result and transitioning to result directly');
+        console.log('[Quiz] All questions answered, calculating result and transitioning to result');
         return {
           ...prev,
           step: 'result',
@@ -151,43 +128,49 @@ export function useQuiz() {
     setState(prev => ({ ...prev, name, email, phone }));
   }, []);
 
-  const submitEmail = useCallback(async (submittedName: string, submittedEmail: string, submittedPhone: string) => {
-    const result = calculateResult(state.answers);
-    console.log('[Quiz] Calculating final result');
-    console.log('[Quiz] User info:', { name: submittedName, email: submittedEmail, phone: submittedPhone });
-    
-    // Submit to database with passed parameters (not state, which may not be updated yet)
+  const submitUnlock = useCallback(async (params: {
+    name: string;
+    email: string;
+    phone: string;
+    privacyConsent: boolean;
+    marketingConsent: boolean;
+  }): Promise<{ success: boolean; error?: string }> => {
+    const result = state.result || calculateResult(state.answers);
+    console.log('[Quiz] Submitting unlock lead data to Supabase');
+
     const response = await submitQuizToDatabase({
-      name: submittedName,
-      email: submittedEmail,
-      phone: submittedPhone,
+      name: params.name,
+      email: params.email,
+      phone: params.phone,
       answers: state.answers,
       result,
-      researchPhase: state.researchPhase
+      researchPhase: state.researchPhase,
+      privacyConsent: params.privacyConsent,
+      marketingConsent: params.marketingConsent
     });
-    
-    if (!response.success) {
-      console.error('[Quiz] Failed to save to database:', response.error);
-    } else {
-      console.log('[Quiz] Quiz saved to database successfully');
+
+    if (response.success) {
+      setIsUnlocked(true);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(UNLOCKED_KEY, 'true');
+      }
+      setState(prev => ({
+        ...prev,
+        name: params.name,
+        email: params.email,
+        phone: params.phone,
+        result
+      }));
+      // Clear progress after successful unlock
+      clearProgress();
     }
-    
-    // Clear progress after completing
-    clearProgress();
-    
-    // Update state with user info and result
-    setState(prev => ({ 
-      ...prev, 
-      name: submittedName,
-      email: submittedEmail,
-      phone: submittedPhone,
-      step: 'result', 
-      result 
-    }));
-  }, [state.answers, state.researchPhase]);
+
+    return response;
+  }, [state.answers, state.result, state.researchPhase]);
 
   const resetQuiz = useCallback(() => {
     clearProgress();
+    setIsUnlocked(false);
     setState(initialState);
     console.log('[Quiz] Quiz reset');
   }, []);
@@ -200,6 +183,7 @@ export function useQuiz() {
 
   return {
     state,
+    isUnlocked,
     currentQuestion: questions[state.currentQuestion],
     currentAnswer,
     progress,
@@ -214,7 +198,7 @@ export function useQuiz() {
     nextQuestion,
     previousQuestion,
     setUserInfo,
-    submitEmail,
+    submitUnlock,
     resetQuiz
   };
 }
