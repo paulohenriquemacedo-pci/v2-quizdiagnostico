@@ -144,7 +144,8 @@ export function QuizResult({
     }
   };
 
-  const handleCTAClick = () => {
+  const handleCTAClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
     const utm = getUTMParams();
     trackCTAClick({
       email,
@@ -155,6 +156,20 @@ export function QuizResult({
       utmCampaign: utm.utmCampaign,
       deviceType: getDeviceType(),
     });
+
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(checkoutUrl);
+        const searchParams = new URLSearchParams(window.location.search);
+        searchParams.forEach((value, key) => {
+          url.searchParams.set(key, value);
+        });
+        window.location.href = url.toString();
+      } catch (err) {
+        console.error('[CTA Redirection Error]', err);
+        window.location.href = checkoutUrl;
+      }
+    }
   };
 
   const toggleFaq = (index: number) => {
