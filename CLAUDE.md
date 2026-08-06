@@ -23,6 +23,8 @@ npm run preview           # preview a production build locally
 Run a single test file: `npx vitest run src/test/scoring.test.ts`
 Run tests matching a name: `npx vitest run -t "nome do teste"`
 
+**Package manager:** use npm (`npm install`), not bun — both lockfiles exist in the repo from past drift; npm is canonical until one is removed.
+
 Debug the result screen without completing the quiz: `http://localhost:8080/?debug=result&profile=A` (profiles: `A`–`F`).
 
 Required `.env` (never commit — see Security below):
@@ -49,6 +51,8 @@ CTA buttons in `QuizResult.tsx` (`handleCTAClick`) link to a Greenn checkout URL
 
 `src/lib/analytics.ts` (`trackQuizStart`, `trackQuizProgress`, `trackCTAClick`, etc.) is intentionally all no-ops now — first-party event tracking to Supabase (`quiz_starts`, `cta_clicks` tables) was superseded by the official Utmify Pixel + UTM tracking scripts installed directly in `index.html`. Those two `<script>` blocks are obfuscated loader snippets (base64 + XOR) that inject Utmify's real script tag — this is Utmify's official embed format, not custom obfuscation added by this project. Don't try to "clean up" or inline them without understanding this.
 
+Trust note: these are official Utmify embeds. A tracking overhaul (Utmify + Meta Ads pixel optimization) is planned for a future session — until then, don't refactor/clean these snippets outside that effort; if checkout/tracking breaks unexpectedly, verify the injected script against Utmify's current official snippet before assuming tampering.
+
 ### Supabase backend
 
 - `src/integrations/supabase/client.ts` — the browser client, built from `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` (anon key only, never the service role key).
@@ -71,7 +75,16 @@ CORS is handled per-function by a local `getCorsHeaders(req)` that echoes back `
 
 `src/pages/Admin.tsx` authenticates with Supabase Auth (email/password via `supabase.auth`), then calls the Edge Functions above (passing the session's access token as the Bearer header) to list/edit/delete responses and pull funnel metrics — it does not query `quiz_responses` directly from the browser.
 
+## Product content
+
+When editing quiz result copy, profile descriptions, or funnel messaging, the source of truth is `docs/produto/<arquivo>.md` — curated, versioned excerpts triaged out of the broader product knowledge base. Check there first before editing components/data files (`profileResults.ts`, `profileSummaries.ts`, `questions.ts`, etc.) directly, since the docs may already capture the intended copy or explain why the current text diverges from an older version.
+
+## Planned future work
+
+- **Quiz reformulation:** the quiz has been reformulated before (30→18 questions, see `docs/produto/HISTORICO_perguntas_quiz_v1_30_perguntas.md`) and may be again. Before touching `questions.ts`/`scoring.ts`/`profileResults.ts`, check `docs/produto/` and confirm with the user which parts of the broader product knowledge base (outside this repo) should drive the new copy/structure.
+- **Meta Conversions API (CAPI):** planned tracking overhaul to complement the browser-side Utmify/Meta Pixel (see Tracking section above) with a server-side Meta Conversions API integration — likely a new Supabase Edge Function forwarding events to Meta's Graph API, deduplicated against the browser pixel via `event_id`, to recover signal lost to iOS/ad blockers. Needs the Meta Pixel ID, a CAPI access token, and the Dataset ID from the user before implementation; also needs to respect the existing `privacy_consent`/`marketing_consent` columns on `quiz_responses`.
+
 ## Security notes
 
-- `.env` and `supabase/.temp/` must never be committed (now covered by `.gitignore`); `.env` was previously tracked in git history holding only the anon/publishable key (not the service-role key), but should still be removed from tracking (`git rm --cached .env`) — ask before doing this since it rewrites tracked state.
+- `.env` and `supabase/.temp/` are gitignored and untracked (cleaned up 2026-08-06). `.env` previously held the anon/publishable key (not service-role) in git history on this public repo — low practical risk given RLS, but never re-add these paths to tracking.
 - Do not add a public `SELECT`/`UPDATE`/`DELETE` RLS policy to `quiz_responses`/`quiz_submissions`/`cta_clicks`/`quiz_starts` — all reads/writes beyond insert must go through an Edge Function with the admin-role check above.
