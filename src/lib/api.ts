@@ -88,9 +88,41 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
       marketing_consent_text_version: marketingConsentTextVersion
     };
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from('quiz_responses')
       .insert(insertData);
+
+    // Se o banco remoto ainda não tiver as colunas de consentimento, tenta o envio legado para não bloquear o usuário
+    if (error && (error.message.includes('column') || error.message.includes('schema cache'))) {
+      console.warn('⚠️ Colunas de consentimento não encontradas no schema do Supabase. Tentando envio em modo de compatibilidade...');
+      const legacyInsertData = {
+        email: normalizedEmail,
+        name: normalizedName,
+        phone: normalizedPhone,
+        answers: answers.filter((a): a is number => a !== null),
+        research_phase: researchPhase,
+        score_perfeccionista: result.scores.A,
+        score_multitarefa: result.scores.B,
+        score_procrastinador: result.scores.C,
+        score_analista: result.scores.D,
+        score_dependente: result.scores.E,
+        score_sobrecarregado: result.scores.F,
+        dominant_profile: result.dominant.name,
+        dominant_code: result.dominant.code,
+        dominant_score: result.dominant.score,
+        dominant_intensity: result.dominant.intensity,
+        utm_source: utmParams.utm_source,
+        utm_medium: utmParams.utm_medium,
+        utm_campaign: utmParams.utm_campaign,
+        device_type: getDeviceType()
+      };
+
+      const retryResult = await supabase
+        .from('quiz_responses')
+        .insert(legacyInsertData);
+
+      error = retryResult.error;
+    }
 
     if (error) {
       console.error('❌ Erro ao salvar no banco:', error);
