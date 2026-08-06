@@ -758,8 +758,6 @@ export function QuizResult({
                 <a
                   href={checkoutUrl}
                   onClick={handleCTAClick}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold text-lg rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(249,115,22,0.2)] block text-center uppercase tracking-wider flex flex-col items-center justify-center gap-1"
                 >
                   <span>Quero meu Diagnóstico por R$27</span>
@@ -905,8 +903,6 @@ export function QuizResult({
                 <a
                   href={checkoutUrl}
                   onClick={handleCTAClick}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="inline-flex flex-col items-center justify-center gap-1 px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold text-sm sm:text-base md:text-lg rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(249,115,22,0.2)] block text-center uppercase tracking-wider w-full sm:w-auto"
                 >
                   <span>Quero meu Diagnóstico por R$27</span>
