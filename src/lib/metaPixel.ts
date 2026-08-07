@@ -48,6 +48,10 @@ export function initMetaPixel(): void {
     console.warn('[metaPixel] VITE_META_PIXEL_ID is not set — Meta Pixel disabled');
     return;
   }
+  // Must be called before 'init' — disables the Pixel's default automatic tracking
+  // (Microdata, SubscribedButtonClick on every button/link click) since we already fire
+  // precise, meaningful custom events ourselves; the automatic ones were just noise.
+  fbq('set', 'autoConfig', false, pixelId);
   fbq('init', pixelId, { external_id: getExternalId(), country: 'br' });
   fbq('track', 'PageView');
 }
