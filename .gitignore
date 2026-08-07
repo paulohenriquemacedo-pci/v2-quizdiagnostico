@@ -17,6 +17,10 @@ dist-ssr
 .env.*
 supabase/.temp/
 
+# Claude Code local settings (records approved Bash commands verbatim, which can include
+# secrets typed during a session, e.g. tokens passed inline to CLI commands)
+.claude/settings.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

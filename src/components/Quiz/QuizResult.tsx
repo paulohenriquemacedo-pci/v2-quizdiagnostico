@@ -3,6 +3,9 @@ import { QuizResult as QuizResultType } from '@/types/quiz.types';
 import { profileResults, GOVERNANCE_TEXT, TRANSITION_BASE, TRANSITION_COMPLEMENT } from '@/data/profileResults';
 import { profileSummaries } from '@/data/profileSummaries';
 import { trackCTAClick, trackResultView } from '@/lib/analytics';
+import { trackViewContentPixel, trackInitiateCheckout } from '@/lib/metaPixel';
+import { normalizePhone } from '@/lib/phoneUtils';
+import { supabase } from '@/integrations/supabase/client';
 import { QuizEmail, UnlockSubmitParams } from './QuizEmail';
 
 interface QuizResultProps {
@@ -103,6 +106,7 @@ export function QuizResult({
   useEffect(() => {
     if (content) {
       trackResultView(dominant.name, dominant.code);
+      trackViewContentPixel({ contentName: dominant.name, contentCategory: dominant.code });
     }
   }, [dominant.name, dominant.code, content]);
 
@@ -147,6 +151,8 @@ export function QuizResult({
   const handleCTAClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const utm = getUTMParams();
+    const deviceType = getDeviceType();
+
     trackCTAClick({
       email,
       dominantProfile: dominant.name,
@@ -154,7 +160,29 @@ export function QuizResult({
       utmSource: utm.utmSource,
       utmMedium: utm.utmMedium,
       utmCampaign: utm.utmCampaign,
-      deviceType: getDeviceType(),
+      deviceType,
+    });
+
+    supabase.from('cta_clicks').insert({
+      email,
+      dominant_profile: dominant.name,
+      dominant_code: dominant.code,
+      utm_source: utm.utmSource,
+      utm_medium: utm.utmMedium,
+      utm_campaign: utm.utmCampaign,
+      device_type: deviceType,
+    }).then(({ error }) => {
+      if (error) console.error('[cta_clicks] Insert error:', error);
+    });
+
+    const eventId = crypto.randomUUID();
+    trackInitiateCheckout({
+      eventId,
+      value: 27,
+      contentName: dominant.name,
+      email,
+      phone,
+      name,
     });
 
     if (typeof window !== 'undefined') {
@@ -164,6 +192,12 @@ export function QuizResult({
         searchParams.forEach((value, key) => {
           url.searchParams.set(key, value);
         });
+        // Pré-preenchimento do checkout Greenn — nomes de parâmetro ainda não confirmados
+        // no painel da Greenn, ajustar aqui assim que validados ao vivo.
+        if (name) url.searchParams.set('name', name);
+        if (email) url.searchParams.set('email', email);
+        if (phone) url.searchParams.set('phone', normalizePhone(phone));
+        url.searchParams.set('event_id', eventId);
         window.location.href = url.toString();
       } catch (err) {
         console.error('[CTA Redirection Error]', err);
