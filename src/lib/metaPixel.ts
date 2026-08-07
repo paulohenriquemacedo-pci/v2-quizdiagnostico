@@ -15,6 +15,10 @@ function fbq(...args: unknown[]): void {
 }
 
 const EXTERNAL_ID_STORAGE_KEY = 'meta_external_id';
+// Greenn's own offer code for this product (matches the "ascwjh4" segment of the checkout URL and
+// the item_id Greenn's own Pixel/CAPI already sends) — kept as content_ids so our InitiateCheckout
+// carries the same commerce parameters Meta's docs recommend (content_ids/content_type/num_items).
+const PRODUCT_ID = 'ascwjh4';
 
 /**
  * A persistent anonymous ID, generated on first visit and reused for the life of the browser
@@ -75,6 +79,9 @@ interface CapiRelayPayload {
   name?: string;
   value?: number;
   content_name?: string;
+  content_ids?: string[];
+  content_type?: string;
+  num_items?: number;
   fbp?: string;
   fbc?: string;
   external_id?: string;
@@ -166,7 +173,14 @@ export function trackInitiateCheckout(params: {
   fbq(
     'track',
     'InitiateCheckout',
-    { value: params.value, currency: 'BRL', content_name: params.contentName },
+    {
+      value: params.value,
+      currency: 'BRL',
+      content_name: params.contentName,
+      content_ids: [PRODUCT_ID],
+      content_type: 'product',
+      num_items: 1,
+    },
     { eventID: params.eventId }
   );
 
@@ -180,6 +194,9 @@ export function trackInitiateCheckout(params: {
       name: params.name,
       value: params.value,
       content_name: params.contentName,
+      content_ids: [PRODUCT_ID],
+      content_type: 'product',
+      num_items: 1,
       fbp,
       fbc,
       external_id: getExternalId(),

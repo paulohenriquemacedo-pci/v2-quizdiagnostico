@@ -44,6 +44,9 @@ interface CapiRelayRequestBody {
   name?: string;
   value?: number;
   content_name?: string;
+  content_ids?: string[];
+  content_type?: string;
+  num_items?: number;
   fbp?: string;
   fbc?: string;
   /** Persistent anonymous visitor ID (localStorage), threads identity from before PII is known. */
@@ -146,6 +149,9 @@ Deno.serve(async (req) => {
       customData.currency = 'BRL';
     }
     if (body.content_name) customData.content_name = body.content_name;
+    if (body.content_ids) customData.content_ids = body.content_ids;
+    if (body.content_type) customData.content_type = body.content_type;
+    if (body.num_items !== undefined) customData.num_items = body.num_items;
 
     const capiPayload: Record<string, unknown> = {
       data: [
