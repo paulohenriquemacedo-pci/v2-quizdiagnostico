@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
         product_name: body.product?.name ?? null,
         sale_created_at: sale.created_at ?? null,
         updated_at: new Date().toISOString(),
+        raw_payload: body,
       },
       { onConflict: 'sale_id' }
     );
