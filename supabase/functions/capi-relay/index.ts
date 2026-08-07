@@ -47,6 +47,8 @@ interface CapiRelayRequestBody {
   fbp?: string;
   fbc?: string;
   event_source_url: string;
+  /** Meta Events Manager "Test Events" code (e.g. "TEST12345") — optional, omitted in production traffic. */
+  test_event_code?: string;
 }
 
 Deno.serve(async (req) => {
@@ -134,7 +136,7 @@ Deno.serve(async (req) => {
     }
     if (body.content_name) customData.content_name = body.content_name;
 
-    const capiPayload = {
+    const capiPayload: Record<string, unknown> = {
       data: [
         {
           event_name: body.event_name,
@@ -147,6 +149,7 @@ Deno.serve(async (req) => {
         },
       ],
     };
+    if (body.test_event_code) capiPayload.test_event_code = body.test_event_code;
 
     const graphResponse = await fetch(
       `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${encodeURIComponent(accessToken)}`,
