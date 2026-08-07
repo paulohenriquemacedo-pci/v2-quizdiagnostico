@@ -14,6 +14,17 @@ function fbq(...args: unknown[]): void {
   window.fbq(...args);
 }
 
+/** Initializes the Pixel with the configured ID and fires PageView. No-ops if the env var is unset. */
+export function initMetaPixel(): void {
+  const pixelId = import.meta.env.VITE_META_PIXEL_ID as string | undefined;
+  if (!pixelId) {
+    console.warn('[metaPixel] VITE_META_PIXEL_ID is not set — Meta Pixel disabled');
+    return;
+  }
+  fbq('init', pixelId);
+  fbq('track', 'PageView');
+}
+
 // BR phone numbers are captured as 10-11 digits (DDD + number), Meta expects E.164 (country code, no +)
 function toE164BR(phone: string): string {
   const digits = normalizePhone(phone);

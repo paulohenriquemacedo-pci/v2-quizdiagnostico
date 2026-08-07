@@ -33,7 +33,7 @@ VITE_SUPABASE_URL=https://<project>.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=<anon-key>
 VITE_META_PIXEL_ID=<meta-pixel-id>
 ```
-`VITE_META_PIXEL_ID` is not secret (it's visible in any page's source once the Pixel loads) — it's interpolated into `index.html` via Vite's `%VITE_META_PIXEL_ID%` HTML env substitution. The CAPI access token and the Greenn webhook secret are **not** env vars — they're Supabase Edge Function secrets only (see Tracking below).
+`VITE_META_PIXEL_ID` is not secret (it's visible in any page's source once the Pixel loads). It's read in JS (`initMetaPixel()` in `src/lib/metaPixel.ts`, called from `main.tsx`), **not** via Vite's `%VAR%` HTML interpolation in `index.html` — that approach was tried first and reverted because Vite hard-fails the entire build (`URI malformed` in `decodeURI`) if the referenced var isn't defined in the build environment, rather than degrading gracefully. Any build host (Hostinger's auto-deploy included) must have `VITE_META_PIXEL_ID` set among its build env vars for the Pixel to actually initialize — if it's missing, `initMetaPixel()` just warns and no-ops instead of breaking the build. The CAPI access token and the Greenn webhook secret are **not** env vars — they're Supabase Edge Function secrets only (see Tracking below).
 
 ## Architecture
 
