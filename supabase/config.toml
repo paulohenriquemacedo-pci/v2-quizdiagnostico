@@ -1,4 +1,1 @@
 project_id = "assajsfgzsupphruwjao"
-
-[functions.greenn-purchase-webhook]
-verify_jwt = false

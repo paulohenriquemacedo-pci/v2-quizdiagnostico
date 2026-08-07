@@ -4,7 +4,6 @@ import { profileResults, GOVERNANCE_TEXT, TRANSITION_BASE, TRANSITION_COMPLEMENT
 import { profileSummaries } from '@/data/profileSummaries';
 import { trackCTAClick, trackResultView } from '@/lib/analytics';
 import { trackViewContentPixel, trackInitiateCheckout } from '@/lib/metaPixel';
-import { normalizePhone } from '@/lib/phoneUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { QuizEmail, UnlockSubmitParams } from './QuizEmail';
 
@@ -192,12 +191,6 @@ export function QuizResult({
         searchParams.forEach((value, key) => {
           url.searchParams.set(key, value);
         });
-        // Pré-preenchimento do checkout Greenn — nomes de parâmetro ainda não confirmados
-        // no painel da Greenn, ajustar aqui assim que validados ao vivo.
-        if (name) url.searchParams.set('name', name);
-        if (email) url.searchParams.set('email', email);
-        if (phone) url.searchParams.set('phone', normalizePhone(phone));
-        url.searchParams.set('event_id', eventId);
         window.location.href = url.toString();
       } catch (err) {
         console.error('[CTA Redirection Error]', err);
