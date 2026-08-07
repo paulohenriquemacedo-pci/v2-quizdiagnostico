@@ -1,5 +1,12 @@
 // Relays Lead/InitiateCheckout events from the browser to the Meta Conversions API,
 // mirroring the same event_id used by the client-side Pixel call for deduplication.
+//
+// PII normalization/hashing uses Meta's official Conversions API Parameter Builder
+// (https://github.com/facebook/capi-param-builder) instead of a hand-rolled SHA-256,
+// so it stays aligned with Meta's exact normalization rules. It's a pure-JS package
+// (own SHA-256 implementation, no native deps), which is why it works via Deno's npm
+// specifier support in this Edge Function despite being published for Node.
+import { ParamBuilder, PII_DATA_TYPE } from 'npm:capi-param-builder-nodejs@1.3.1';
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('Origin') || '';
@@ -19,16 +26,8 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-async function sha256Hex(input: string): Promise<string> {
-  const data = new TextEncoder().encode(input);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function normalizeEmail(value: string): string {
-  return value.trim().toLowerCase();
-}
-
+// The param builder normalizes phone digits but doesn't add a country code — BR numbers
+// are captured as 10-11 digits (DDD + number), so the "55" prefix still has to be ours.
 function toE164BR(value: string): string {
   const digits = value.replace(/\D/g, '');
   if (digits.startsWith('55') && (digits.length === 12 || digits.length === 13)) {
@@ -95,6 +94,10 @@ Deno.serve(async (req) => {
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
     const userAgent = req.headers.get('user-agent') ?? undefined;
 
+    // Fresh instance per request — Edge Function isolates can be reused across invocations,
+    // and ParamBuilder isn't meant to hold state across unrelated requests/users.
+    const paramBuilder = new ParamBuilder();
+
     const userData: Record<string, unknown> = {
       client_ip_address: clientIp,
       client_user_agent: userAgent,
@@ -102,14 +105,26 @@ Deno.serve(async (req) => {
       fbc: body.fbc,
     };
 
-    if (body.email) userData.em = [await sha256Hex(normalizeEmail(body.email))];
-    if (body.phone) userData.ph = [await sha256Hex(toE164BR(body.phone))];
+    if (body.email) {
+      const hashed = paramBuilder.getNormalizedAndHashedPII(body.email, PII_DATA_TYPE.EMAIL);
+      if (hashed) userData.em = [hashed];
+    }
+    if (body.phone) {
+      const hashed = paramBuilder.getNormalizedAndHashedPII(toE164BR(body.phone), PII_DATA_TYPE.PHONE);
+      if (hashed) userData.ph = [hashed];
+    }
     if (body.name) {
       const nameParts = body.name.trim().split(/\s+/).filter(Boolean);
-      const firstName = nameParts[0]?.toLowerCase();
-      const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : undefined;
-      if (firstName) userData.fn = [await sha256Hex(firstName)];
-      if (lastName) userData.ln = [await sha256Hex(lastName)];
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : undefined;
+      if (firstName) {
+        const hashed = paramBuilder.getNormalizedAndHashedPII(firstName, PII_DATA_TYPE.FIRST_NAME);
+        if (hashed) userData.fn = [hashed];
+      }
+      if (lastName) {
+        const hashed = paramBuilder.getNormalizedAndHashedPII(lastName, PII_DATA_TYPE.LAST_NAME);
+        if (hashed) userData.ln = [hashed];
+      }
     }
 
     const customData: Record<string, unknown> = {};
