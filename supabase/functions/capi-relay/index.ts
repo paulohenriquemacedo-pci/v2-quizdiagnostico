@@ -46,6 +46,9 @@ interface CapiRelayRequestBody {
   content_name?: string;
   fbp?: string;
   fbc?: string;
+  /** Persistent anonymous visitor ID (localStorage), threads identity from before PII is known. */
+  external_id?: string;
+  country?: string;
   event_source_url: string;
   /** Meta Events Manager "Test Events" code (e.g. "TEST12345") — optional, omitted in production traffic. */
   test_event_code?: string;
@@ -127,6 +130,14 @@ Deno.serve(async (req) => {
         const hashed = paramBuilder.getNormalizedAndHashedPII(lastName, PII_DATA_TYPE.LAST_NAME);
         if (hashed) userData.ln = [hashed];
       }
+    }
+    if (body.external_id) {
+      const hashed = paramBuilder.getNormalizedAndHashedPII(body.external_id, PII_DATA_TYPE.EXTERNAL_ID);
+      if (hashed) userData.external_id = [hashed];
+    }
+    if (body.country) {
+      const hashed = paramBuilder.getNormalizedAndHashedPII(body.country, PII_DATA_TYPE.COUNTRY);
+      if (hashed) userData.country = [hashed];
     }
 
     const customData: Record<string, unknown> = {};

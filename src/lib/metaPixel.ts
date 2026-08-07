@@ -14,14 +14,37 @@ function fbq(...args: unknown[]): void {
   window.fbq(...args);
 }
 
-/** Initializes the Pixel with the configured ID and fires PageView. No-ops if the env var is unset. */
+const EXTERNAL_ID_STORAGE_KEY = 'meta_external_id';
+
+/**
+ * A persistent anonymous ID, generated on first visit and reused for the life of the browser
+ * (localStorage, not sessionStorage) — gives Meta a stable identity thread from the very first
+ * pageview through Lead/Purchase, even before we know the visitor's real PII.
+ */
+function getExternalId(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    let id = localStorage.getItem(EXTERNAL_ID_STORAGE_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(EXTERNAL_ID_STORAGE_KEY, id);
+    }
+    return id;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Initializes the Pixel with the configured ID, sets the persistent external_id/country as
+ * Advanced Matching context (so even anonymous events like QuizStart carry it), and fires
+ * PageView. No-ops if the env var is unset. */
 export function initMetaPixel(): void {
   const pixelId = import.meta.env.VITE_META_PIXEL_ID as string | undefined;
   if (!pixelId) {
     console.warn('[metaPixel] VITE_META_PIXEL_ID is not set — Meta Pixel disabled');
     return;
   }
-  fbq('init', pixelId);
+  fbq('init', pixelId, { external_id: getExternalId(), country: 'br' });
   fbq('track', 'PageView');
 }
 
@@ -54,6 +77,8 @@ interface CapiRelayPayload {
   content_name?: string;
   fbp?: string;
   fbc?: string;
+  external_id?: string;
+  country?: string;
   event_source_url: string;
 }
 
@@ -88,6 +113,10 @@ export function setAdvancedMatching(data: { email?: string; phone?: string; name
     ph: data.phone ? toE164BR(data.phone) : undefined,
     fn: firstName ? firstName.toLowerCase() : undefined,
     ln: lastName ? lastName.toLowerCase() : undefined,
+    // Re-including these on every call: fbq('init', ...) replaces the Advanced Matching
+    // object rather than merging it, so omitting them here would drop them from this point on.
+    external_id: getExternalId(),
+    country: 'br',
   });
 }
 
@@ -116,6 +145,8 @@ export function trackLead(params: { eventId: string; email: string; phone: strin
     name: params.name,
     fbp,
     fbc,
+    external_id: getExternalId(),
+    country: 'br',
     event_source_url: typeof window !== 'undefined' ? window.location.href : '',
   });
 }
@@ -151,6 +182,8 @@ export function trackInitiateCheckout(params: {
       content_name: params.contentName,
       fbp,
       fbc,
+      external_id: getExternalId(),
+      country: 'br',
       event_source_url: typeof window !== 'undefined' ? window.location.href : '',
     },
     { keepalive: true }
