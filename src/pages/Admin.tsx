@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Download, RefreshCw, Lock, Users, TrendingUp, LogOut, Trash2, MousePointerClick, PlayCircle, XCircle, Target, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, Lock, Users, TrendingUp, LogOut, Trash2, MousePointerClick, PlayCircle, XCircle, Target, RotateCcw, DollarSign, Clock, Ban, Wallet } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
@@ -65,6 +65,33 @@ interface FunnelMetrics {
   }>;
 }
 
+interface SalesMetrics {
+  totalRevenue: number;
+  totalSalesCount: number;
+  totalSalesAttempted: number;
+  pendingCount: number;
+  refusedCount: number;
+  refundedCount: number;
+  arpu: number;
+  revenueByCampaign: Array<{
+    source: string;
+    campaign: string;
+    revenue: number;
+    sales: number;
+  }>;
+  recentPurchases: Array<{
+    id: string;
+    sale_id: string | null;
+    status: string;
+    email: string | null;
+    name: string | null;
+    amount: number | null;
+    product_name: string | null;
+    sale_created_at: string | null;
+    created_at: string;
+  }>;
+}
+
 export default function Admin() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -76,6 +103,7 @@ export default function Admin() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [responses, setResponses] = useState<QuizResponse[]>([]);
   const [funnelMetrics, setFunnelMetrics] = useState<FunnelMetrics | null>(null);
+  const [salesMetrics, setSalesMetrics] = useState<SalesMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -136,6 +164,7 @@ export default function Admin() {
         setIsAdmin(true);
         fetchResponses();
         fetchFunnelMetrics();
+        fetchSalesMetrics();
       }
     } catch (err) {
       console.error('[Admin] Error checking admin role:', err);
@@ -226,6 +255,22 @@ export default function Admin() {
       console.log('[Admin] Fetched funnel metrics:', data?.data);
     } catch (err) {
       console.error('[Admin] Error fetching funnel metrics:', err);
+    }
+  };
+
+  const fetchSalesMetrics = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-sales-metrics');
+
+      if (error) {
+        console.error('[Admin] Error fetching sales metrics:', error);
+        return;
+      }
+
+      setSalesMetrics(data?.data || null);
+      console.log('[Admin] Fetched sales metrics:', data?.data);
+    } catch (err) {
+      console.error('[Admin] Error fetching sales metrics:', err);
     }
   };
 
@@ -346,7 +391,7 @@ export default function Admin() {
     
     try {
       const { data, error } = await supabase.functions.invoke('reset-quiz-data', {
-        body: { tables: ['quiz_starts', 'quiz_responses', 'cta_clicks'] }
+        body: { tables: ['quiz_starts', 'quiz_responses', 'cta_clicks', 'purchases'] }
       });
 
       if (error) {
@@ -364,6 +409,17 @@ export default function Admin() {
         dropoffRate: 0,
         ctaClickRate: 0,
         recentClicks: [],
+      });
+      setSalesMetrics({
+        totalRevenue: 0,
+        totalSalesCount: 0,
+        totalSalesAttempted: 0,
+        pendingCount: 0,
+        refusedCount: 0,
+        refundedCount: 0,
+        arpu: 0,
+        revenueByCampaign: [],
+        recentPurchases: [],
       });
       setSelectedIds(new Set());
       
@@ -583,7 +639,7 @@ export default function Admin() {
             <span className="text-sm text-muted-foreground hidden md:inline">
               {user.email}
             </span>
-            <Button variant="outline" onClick={() => { fetchResponses(); fetchFunnelMetrics(); }} disabled={isLoading}>
+            <Button variant="outline" onClick={() => { fetchResponses(); fetchFunnelMetrics(); fetchSalesMetrics(); }} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
@@ -607,6 +663,7 @@ export default function Admin() {
                       <li>Todos os registros de quiz iniciados</li>
                       <li>Todas as respostas do quiz</li>
                       <li>Todos os cliques no CTA</li>
+                      <li>Todos os registros de vendas</li>
                     </ul>
                     <p className="mt-3 font-medium text-destructive">
                       Esta ação não pode ser desfeita!
@@ -697,6 +754,109 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Sales Metrics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-full bg-emerald-500/10">
+                  <DollarSign className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Faturamento</p>
+                  <p className="text-2xl font-bold">
+                    {(salesMetrics?.totalRevenue || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                  <p className="text-xs text-emerald-600 font-medium">
+                    {salesMetrics?.totalSalesCount || 0} vendas aprovadas
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-full bg-violet-500/10">
+                  <Wallet className="h-5 w-5 text-violet-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ticket Médio (ARPU)</p>
+                  <p className="text-2xl font-bold">
+                    {(salesMetrics?.arpu || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-full bg-amber-500/10">
+                  <Clock className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Vendas Pendentes</p>
+                  <p className="text-2xl font-bold">{salesMetrics?.pendingCount || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-full bg-red-500/10">
+                  <Ban className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Recusadas / Reembolsadas</p>
+                  <p className="text-2xl font-bold">
+                    {(salesMetrics?.refusedCount || 0) + (salesMetrics?.refundedCount || 0)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Revenue by campaign */}
+        {salesMetrics && salesMetrics.revenueByCampaign.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Faturamento por Campanha (UTM)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Origem (utm_source)</TableHead>
+                      <TableHead>Campanha (utm_campaign)</TableHead>
+                      <TableHead className="text-right">Vendas</TableHead>
+                      <TableHead className="text-right">Faturamento</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {salesMetrics.revenueByCampaign.map((row) => (
+                      <TableRow key={`${row.source}|${row.campaign}`}>
+                        <TableCell>{row.source}</TableCell>
+                        <TableCell>{row.campaign}</TableCell>
+                        <TableCell className="text-right">{row.sales}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {row.revenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Profile Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
