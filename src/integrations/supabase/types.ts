@@ -21,11 +21,14 @@ export type Database = {
           dominant_code: string | null
           dominant_profile: string | null
           email: string | null
+          fbclid: string | null
           id: string
           quiz_response_id: string | null
           utm_campaign: string | null
+          utm_content: string | null
           utm_medium: string | null
           utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
           clicked_at?: string
@@ -33,11 +36,14 @@ export type Database = {
           dominant_code?: string | null
           dominant_profile?: string | null
           email?: string | null
+          fbclid?: string | null
           id?: string
           quiz_response_id?: string | null
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
           clicked_at?: string
@@ -45,11 +51,14 @@ export type Database = {
           dominant_code?: string | null
           dominant_profile?: string | null
           email?: string | null
+          fbclid?: string | null
           id?: string
           quiz_response_id?: string | null
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: [
           {
@@ -71,6 +80,7 @@ export type Database = {
           dominant_profile: string
           dominant_score: number
           email: string
+          fbclid: string | null
           id: string
           name: string | null
           phone: string | null
@@ -82,8 +92,10 @@ export type Database = {
           score_sobrecarregado: number
           research_phase: string | null
           utm_campaign: string | null
+          utm_content: string | null
           utm_medium: string | null
           utm_source: string | null
+          utm_term: string | null
           privacy_consent: boolean
           privacy_consent_at: string
           privacy_policy_version: string | null
@@ -100,6 +112,7 @@ export type Database = {
           dominant_profile: string
           dominant_score: number
           email: string
+          fbclid?: string | null
           id?: string
           name?: string | null
           phone?: string | null
@@ -111,8 +124,10 @@ export type Database = {
           research_phase?: string | null
           score_sobrecarregado?: number
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
           privacy_consent?: boolean
           privacy_consent_at?: string
           privacy_policy_version?: string | null
@@ -129,6 +144,7 @@ export type Database = {
           dominant_profile?: string
           dominant_score?: number
           email?: string
+          fbclid?: string | null
           id?: string
           name?: string | null
           phone?: string | null
@@ -140,8 +156,10 @@ export type Database = {
           research_phase?: string | null
           score_sobrecarregado?: number
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
           privacy_consent?: boolean
           privacy_consent_at?: string
           privacy_policy_version?: string | null
@@ -154,30 +172,111 @@ export type Database = {
       quiz_starts: {
         Row: {
           device_type: string | null
+          fbclid: string | null
           id: string
           session_id: string
           started_at: string
           utm_campaign: string | null
+          utm_content: string | null
           utm_medium: string | null
           utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
           device_type?: string | null
+          fbclid?: string | null
           id?: string
           session_id: string
           started_at?: string
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
           device_type?: string | null
+          fbclid?: string | null
           id?: string
           session_id?: string
           started_at?: string
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
+      tracking_events: {
+        Row: {
+          client_ip: string | null
+          created_at: string
+          currency: string | null
+          event_id: string
+          event_name: string
+          external_id: string | null
+          fbc: string | null
+          fbclid: string | null
+          fbp: string | null
+          id: string
+          meta_error: string | null
+          meta_success: boolean
+          request_payload: Json | null
+          response_payload: Json | null
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          value: number | null
+        }
+        Insert: {
+          client_ip?: string | null
+          created_at?: string
+          currency?: string | null
+          event_id: string
+          event_name: string
+          external_id?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          id?: string
+          meta_error?: string | null
+          meta_success: boolean
+          request_payload?: Json | null
+          response_payload?: Json | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          value?: number | null
+        }
+        Update: {
+          client_ip?: string | null
+          created_at?: string
+          currency?: string | null
+          event_id?: string
+          event_name?: string
+          external_id?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
+          id?: string
+          meta_error?: string | null
+          meta_success?: boolean
+          request_payload?: Json | null
+          response_payload?: Json | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          value?: number | null
         }
         Relationships: []
       }

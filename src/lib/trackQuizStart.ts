@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAttribution } from "@/lib/attribution";
 
 // Generate a unique session ID for this browser session
 function getSessionId(): string {
@@ -8,17 +9,6 @@ function getSessionId(): string {
     sessionStorage.setItem('quiz_session_id', sessionId);
   }
   return sessionId;
-}
-
-// Get UTM params from URL
-function getUTMParams() {
-  if (typeof window === 'undefined') return {};
-  const params = new URLSearchParams(window.location.search);
-  return {
-    utm_source: params.get('utm_source'),
-    utm_medium: params.get('utm_medium'),
-    utm_campaign: params.get('utm_campaign'),
-  };
 }
 
 // Detect device type
@@ -34,7 +24,7 @@ function getDeviceType(): string {
 export async function trackQuizStart(): Promise<void> {
   try {
     const sessionId = getSessionId();
-    const utmParams = getUTMParams();
+    const attribution = getAttribution();
     const deviceType = getDeviceType();
 
     // Check if we already tracked this session
@@ -46,9 +36,12 @@ export async function trackQuizStart(): Promise<void> {
 
     const { error } = await supabase.from('quiz_starts').insert({
       session_id: sessionId,
-      utm_source: utmParams.utm_source,
-      utm_medium: utmParams.utm_medium,
-      utm_campaign: utmParams.utm_campaign,
+      utm_source: attribution.utm_source,
+      utm_medium: attribution.utm_medium,
+      utm_campaign: attribution.utm_campaign,
+      utm_content: attribution.utm_content,
+      utm_term: attribution.utm_term,
+      fbclid: attribution.fbclid,
       device_type: deviceType,
     });
 

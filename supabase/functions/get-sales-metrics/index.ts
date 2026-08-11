@@ -122,6 +122,18 @@ Deno.serve(async (req) => {
       revenueByCampaign.set(key, existing);
     }
 
+    // Lead counts per campaign — reuses the same `responses` fetch as utmByEmail above, so the
+    // CampaignsPanel dashboard can compute CPL (spend/leads) without a separate function/query.
+    const leadsByCampaign = new Map<string, { source: string; campaign: string; count: number }>();
+    for (const r of responses) {
+      const source = r.utm_source || 'desconhecido';
+      const campaign = r.utm_campaign || 'desconhecido';
+      const key = `${source}|${campaign}`;
+      const existing = leadsByCampaign.get(key) || { source, campaign, count: 0 };
+      existing.count += 1;
+      leadsByCampaign.set(key, existing);
+    }
+
     const metrics = {
       totalRevenue: Number(totalRevenue.toFixed(2)),
       totalSalesCount,
@@ -131,6 +143,7 @@ Deno.serve(async (req) => {
       refundedCount: refundedOrChargedBack.length,
       arpu: Number(arpu.toFixed(2)),
       revenueByCampaign: Array.from(revenueByCampaign.values()).sort((a, b) => b.revenue - a.revenue),
+      leadsByCampaign: Array.from(leadsByCampaign.values()).sort((a, b) => b.count - a.count),
       recentPurchases: purchases.slice(0, 10),
     };
 

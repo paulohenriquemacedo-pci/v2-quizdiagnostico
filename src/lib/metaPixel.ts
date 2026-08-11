@@ -1,4 +1,5 @@
 import { normalizeEmail, normalizePhone } from '@/lib/phoneUtils';
+import { getAttribution, getFbcWithFallback } from '@/lib/attribution';
 
 declare global {
   interface Window {
@@ -88,6 +89,12 @@ interface CapiRelayPayload {
   num_items?: number;
   fbp?: string;
   fbc?: string;
+  fbclid?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
   external_id?: string;
   country?: string;
   event_source_url: string;
@@ -148,6 +155,7 @@ export function trackLead(params: { eventId: string; email: string; phone: strin
   fbq('track', 'Lead', {}, { eventID: params.eventId });
 
   const { fbp, fbc } = getFbCookies();
+  const attribution = getAttribution();
   callCapiRelay({
     event_name: 'Lead',
     event_id: params.eventId,
@@ -155,7 +163,13 @@ export function trackLead(params: { eventId: string; email: string; phone: strin
     phone: params.phone,
     name: params.name,
     fbp,
-    fbc,
+    fbc: getFbcWithFallback(fbc),
+    fbclid: attribution.fbclid,
+    utm_source: attribution.utm_source,
+    utm_medium: attribution.utm_medium,
+    utm_campaign: attribution.utm_campaign,
+    utm_content: attribution.utm_content,
+    utm_term: attribution.utm_term,
     external_id: getExternalId(),
     country: 'br',
     event_source_url: typeof window !== 'undefined' ? window.location.href : '',
@@ -189,6 +203,7 @@ export function trackInitiateCheckout(params: {
   );
 
   const { fbp, fbc } = getFbCookies();
+  const attribution = getAttribution();
   callCapiRelay(
     {
       event_name: 'InitiateCheckout',
@@ -202,7 +217,13 @@ export function trackInitiateCheckout(params: {
       content_type: 'product',
       num_items: 1,
       fbp,
-      fbc,
+      fbc: getFbcWithFallback(fbc),
+      fbclid: attribution.fbclid,
+      utm_source: attribution.utm_source,
+      utm_medium: attribution.utm_medium,
+      utm_campaign: attribution.utm_campaign,
+      utm_content: attribution.utm_content,
+      utm_term: attribution.utm_term,
       external_id: getExternalId(),
       country: 'br',
       event_source_url: typeof window !== 'undefined' ? window.location.href : '',

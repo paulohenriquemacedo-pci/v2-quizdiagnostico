@@ -7,6 +7,7 @@
 // (own SHA-256 implementation, no native deps), which is why it works via Deno's npm
 // specifier support in this Edge Function despite being published for Node.
 import { ParamBuilder, PII_DATA_TYPE } from 'npm:capi-param-builder-nodejs@1.3.1';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('Origin') || '';
@@ -49,6 +50,12 @@ interface CapiRelayRequestBody {
   num_items?: number;
   fbp?: string;
   fbc?: string;
+  fbclid?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
   /** Persistent anonymous visitor ID (localStorage), threads identity from before PII is known. */
   external_id?: string;
   country?: string;
@@ -183,6 +190,43 @@ Deno.serve(async (req) => {
       console.error('[capi-relay] Graph API error:', graphResponse.status, JSON.stringify(graphResult));
     } else {
       console.log(`[capi-relay] Forwarded ${body.event_name} (event_id=${body.event_id})`);
+    }
+
+    // Best-effort audit log — never awaited, never allowed to affect the response. Lets the
+    // admin dashboard inspect Event Match Quality inputs and Graph API responses after the fact.
+    try {
+      const dbClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      dbClient
+        .from('tracking_events')
+        .insert({
+          event_name: body.event_name,
+          event_id: body.event_id,
+          fbp: body.fbp,
+          fbc: body.fbc,
+          fbclid: body.fbclid,
+          client_ip: clientIp,
+          user_agent: userAgent,
+          utm_source: body.utm_source,
+          utm_medium: body.utm_medium,
+          utm_campaign: body.utm_campaign,
+          utm_content: body.utm_content,
+          utm_term: body.utm_term,
+          external_id: body.external_id,
+          value: body.value,
+          currency: body.value !== undefined ? 'BRL' : null,
+          meta_success: graphResponse.ok,
+          meta_error: graphResponse.ok ? null : JSON.stringify(graphResult),
+          request_payload: body,
+          response_payload: graphResult,
+        })
+        .then(({ error }) => {
+          if (error) console.error('[capi-relay] tracking_events insert error:', error);
+        });
+    } catch (error) {
+      console.error('[capi-relay] tracking_events insert threw:', error);
     }
 
     return new Response(JSON.stringify({ received: true }), {

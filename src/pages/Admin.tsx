@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { EditResponseDialog } from '@/components/Admin/EditResponseDialog';
+import { CampaignsPanel } from '@/components/Admin/CampaignsPanel';
 interface QuizResponse {
   id: string;
   created_at: string;
@@ -78,6 +79,11 @@ interface SalesMetrics {
     campaign: string;
     revenue: number;
     sales: number;
+  }>;
+  leadsByCampaign: Array<{
+    source: string;
+    campaign: string;
+    count: number;
   }>;
   recentPurchases: Array<{
     id: string;
@@ -419,6 +425,7 @@ export default function Admin() {
         refundedCount: 0,
         arpu: 0,
         revenueByCampaign: [],
+        leadsByCampaign: [],
         recentPurchases: [],
       });
       setSelectedIds(new Set());
@@ -856,6 +863,14 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Campaigns panel: Meta Ads spend merged with internal leads/revenue */}
+        {salesMetrics && (
+          <CampaignsPanel
+            revenueByCampaign={salesMetrics.revenueByCampaign}
+            leadsByCampaign={salesMetrics.leadsByCampaign}
+          />
         )}
 
         {/* Profile Stats Cards */}

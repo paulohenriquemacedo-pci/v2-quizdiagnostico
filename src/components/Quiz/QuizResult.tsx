@@ -4,6 +4,7 @@ import { profileResults, GOVERNANCE_TEXT, TRANSITION_BASE, TRANSITION_COMPLEMENT
 import { profileSummaries } from '@/data/profileSummaries';
 import { trackCTAClick, trackResultView } from '@/lib/analytics';
 import { trackViewContentPixel, trackInitiateCheckout } from '@/lib/metaPixel';
+import { getAttribution } from '@/lib/attribution';
 import { supabase } from '@/integrations/supabase/client';
 import { QuizEmail, UnlockSubmitParams } from './QuizEmail';
 
@@ -15,17 +16,6 @@ interface QuizResultProps {
   isUnlocked?: boolean;
   onUnlockSubmit?: (data: UnlockSubmitParams) => Promise<{ success: boolean; error?: string }>;
   onReset: () => void;
-}
-
-// Get UTM params from URL
-function getUTMParams() {
-  if (typeof window === 'undefined') return {};
-  const params = new URLSearchParams(window.location.search);
-  return {
-    utmSource: params.get('utm_source'),
-    utmMedium: params.get('utm_medium'),
-    utmCampaign: params.get('utm_campaign'),
-  };
 }
 
 // Detect device type
@@ -149,16 +139,16 @@ export function QuizResult({
 
   const handleCTAClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    const utm = getUTMParams();
+    const attribution = getAttribution();
     const deviceType = getDeviceType();
 
     trackCTAClick({
       email,
       dominantProfile: dominant.name,
       dominantCode: dominant.code,
-      utmSource: utm.utmSource,
-      utmMedium: utm.utmMedium,
-      utmCampaign: utm.utmCampaign,
+      utmSource: attribution.utm_source,
+      utmMedium: attribution.utm_medium,
+      utmCampaign: attribution.utm_campaign,
       deviceType,
     });
 
@@ -166,9 +156,12 @@ export function QuizResult({
       email,
       dominant_profile: dominant.name,
       dominant_code: dominant.code,
-      utm_source: utm.utmSource,
-      utm_medium: utm.utmMedium,
-      utm_campaign: utm.utmCampaign,
+      utm_source: attribution.utm_source,
+      utm_medium: attribution.utm_medium,
+      utm_campaign: attribution.utm_campaign,
+      utm_content: attribution.utm_content,
+      utm_term: attribution.utm_term,
+      fbclid: attribution.fbclid,
       device_type: deviceType,
     }).then(({ error }) => {
       if (error) console.error('[cta_clicks] Insert error:', error);

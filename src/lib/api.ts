@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { QuizResult } from '@/types/quiz.types';
+import { getAttribution } from '@/lib/attribution';
 
 export interface SubmitQuizParams {
   name: string;
@@ -19,16 +20,6 @@ export interface SubmitQuizParams {
 function getDeviceType(): string {
   if (typeof window === 'undefined') return 'unknown';
   return /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
-}
-
-function getUTMParams() {
-  if (typeof window === 'undefined') return {};
-  const params = new URLSearchParams(window.location.search);
-  return {
-    utm_source: params.get('utm_source'),
-    utm_medium: params.get('utm_medium'),
-    utm_campaign: params.get('utm_campaign')
-  };
 }
 
 export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ success: boolean; error?: string }> {
@@ -51,7 +42,7 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
     return { success: false, error: 'O consentimento de privacidade é obrigatório para gerar o diagnóstico.' };
   }
 
-  const utmParams = getUTMParams();
+  const attribution = getAttribution();
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedName = name.trim().replace(/\s+/g, ' ');
   const normalizedPhone = phone.replace(/\D/g, '');
@@ -76,9 +67,12 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
       dominant_code: result.dominant.code,
       dominant_score: result.dominant.score,
       dominant_intensity: result.dominant.intensity,
-      utm_source: utmParams.utm_source,
-      utm_medium: utmParams.utm_medium,
-      utm_campaign: utmParams.utm_campaign,
+      utm_source: attribution.utm_source,
+      utm_medium: attribution.utm_medium,
+      utm_campaign: attribution.utm_campaign,
+      utm_content: attribution.utm_content,
+      utm_term: attribution.utm_term,
+      fbclid: attribution.fbclid,
       device_type: getDeviceType(),
       privacy_consent: true,
       privacy_consent_at: privacyConsentAt || nowIso,
@@ -111,9 +105,12 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
         dominant_code: result.dominant.code,
         dominant_score: result.dominant.score,
         dominant_intensity: result.dominant.intensity,
-        utm_source: utmParams.utm_source,
-        utm_medium: utmParams.utm_medium,
-        utm_campaign: utmParams.utm_campaign,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+        utm_content: attribution.utm_content,
+        utm_term: attribution.utm_term,
+        fbclid: attribution.fbclid,
         device_type: getDeviceType()
       };
 
