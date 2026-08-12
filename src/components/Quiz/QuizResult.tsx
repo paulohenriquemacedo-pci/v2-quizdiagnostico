@@ -3,7 +3,6 @@ import { QuizResult as QuizResultType } from '@/types/quiz.types';
 import { profileResults, GOVERNANCE_TEXT, TRANSITION_BASE, TRANSITION_COMPLEMENT } from '@/data/profileResults';
 import { profileSummaries } from '@/data/profileSummaries';
 import { trackCTAClick, trackResultView } from '@/lib/analytics';
-import { trackViewContentPixel, trackInitiateCheckout } from '@/lib/metaPixel';
 import { getAttribution } from '@/lib/attribution';
 import { supabase } from '@/integrations/supabase/client';
 import { QuizEmail, UnlockSubmitParams } from './QuizEmail';
@@ -95,7 +94,6 @@ export function QuizResult({
   useEffect(() => {
     if (content) {
       trackResultView(dominant.name, dominant.code);
-      trackViewContentPixel({ contentName: dominant.name, contentCategory: dominant.code });
     }
   }, [dominant.name, dominant.code, content]);
 
@@ -165,16 +163,6 @@ export function QuizResult({
       device_type: deviceType,
     }).then(({ error }) => {
       if (error) console.error('[cta_clicks] Insert error:', error);
-    });
-
-    const eventId = crypto.randomUUID();
-    trackInitiateCheckout({
-      eventId,
-      value: 27,
-      contentName: dominant.name,
-      email,
-      phone,
-      name,
     });
 
     if (typeof window !== 'undefined') {

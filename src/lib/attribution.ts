@@ -16,9 +16,9 @@ function readUrlParam(params: URLSearchParams, key: string): string | undefined 
 
 /**
  * Captures UTM/fbclid params from the current URL into localStorage, once — first touch wins.
- * Call as early as possible (before initMetaPixel()) so every later step of the funnel sees the
- * same attribution values even if the visitor navigates within the SPA and the URL's query string
- * is gone by the time a later step fires (resumed quiz, multi-step funnel, etc).
+ * Call as early as possible (before any tracking is initialized) so every later step of the
+ * funnel sees the same attribution values even if the visitor navigates within the SPA and the
+ * URL's query string is gone by the time a later step fires (resumed quiz, multi-step funnel, etc).
  */
 export function captureAttributionFromUrl(): void {
   if (typeof window === 'undefined') return;

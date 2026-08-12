@@ -1,12 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QuizState, QuizResult } from '@/types/quiz.types';
 import { questions } from '@/data/questions';
 import { calculateResult } from '@/lib/scoring';
 import { submitQuizToDatabase } from '@/lib/api';
 import { trackQuizStart } from '@/lib/trackQuizStart';
-import { trackQuizStartPixel, trackQuizProgressPixel, trackLead, setAdvancedMatching } from '@/lib/metaPixel';
-
-const PROGRESS_THRESHOLDS = [25, 50, 75, 100];
 
 const STORAGE_KEY = 'quiz_progress';
 const UNLOCKED_KEY = 'quiz_unlocked_session';
@@ -73,13 +70,10 @@ export function useQuiz() {
     }
   }, [state]);
 
-  const firedProgressRef = useRef<Set<number>>(new Set());
-
   const startQuiz = useCallback(() => {
     setState(prev => ({ ...prev, step: 'context' }));
     console.log('[Quiz] Start clicked, moving to context question');
     trackQuizStart();
-    trackQuizStartPixel();
   }, []);
 
   const answerContext = useCallback((phase: string) => {
@@ -103,15 +97,6 @@ export function useQuiz() {
 
   const nextQuestion = useCallback(() => {
     setState(prev => {
-      const answeredCount = prev.currentQuestion + 2 > TOTAL_QUESTIONS ? TOTAL_QUESTIONS : prev.currentQuestion + 2;
-      const percentage = Math.round((answeredCount / TOTAL_QUESTIONS) * 100);
-      PROGRESS_THRESHOLDS.forEach(threshold => {
-        if (percentage >= threshold && !firedProgressRef.current.has(threshold)) {
-          firedProgressRef.current.add(threshold);
-          trackQuizProgressPixel(threshold);
-        }
-      });
-
       if (prev.currentQuestion < TOTAL_QUESTIONS - 1) {
         console.log(`[Quiz] Moving to question ${prev.currentQuestion + 2}`);
         return { ...prev, currentQuestion: prev.currentQuestion + 1 };
@@ -176,14 +161,6 @@ export function useQuiz() {
         phone: params.phone,
         result
       }));
-
-      setAdvancedMatching({ email: params.email, phone: params.phone, name: params.name });
-      trackLead({
-        eventId: crypto.randomUUID(),
-        email: params.email,
-        phone: params.phone,
-        name: params.name
-      });
 
       // Clear progress after successful unlock
       clearProgress();
