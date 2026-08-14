@@ -135,8 +135,7 @@ export function QuizResult({
     }
   };
 
-  const handleCTAClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
+  const handleCTAClick = () => {
     const attribution = getAttribution();
     const deviceType = getDeviceType();
 
@@ -165,19 +164,11 @@ export function QuizResult({
       if (error) console.error('[cta_clicks] Insert error:', error);
     });
 
-    if (typeof window !== 'undefined') {
-      try {
-        const url = new URL(checkoutUrl);
-        const searchParams = new URLSearchParams(window.location.search);
-        searchParams.forEach((value, key) => {
-          url.searchParams.set(key, value);
-        });
-        window.location.href = url.toString();
-      } catch (err) {
-        console.error('[CTA Redirection Error]', err);
-        window.location.href = checkoutUrl;
-      }
-    }
+    // Deliberately NOT calling preventDefault here: this needs to be a real, native <a> click
+    // that the browser actually navigates on, so third-party click-based tracking (e.g. LowTrack's
+    // pixel.js) can detect the outbound checkout link and fire InitiateCheckout itself. The UTM
+    // forwarding happens ahead of time in `finalCheckoutUrl`, baked into the href, instead of
+    // being appended via window.location.href at click time.
   };
 
   const toggleFaq = (index: number) => {
@@ -185,6 +176,21 @@ export function QuizResult({
   };
 
   const checkoutUrl = "https://pay.hotmart.com/T107146469P?checkoutMode=10";
+
+  const finalCheckoutUrl = (() => {
+    if (typeof window === 'undefined') return checkoutUrl;
+    try {
+      const url = new URL(checkoutUrl);
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.forEach((value, key) => {
+        url.searchParams.set(key, value);
+      });
+      return url.toString();
+    } catch (err) {
+      console.error('[CTA URL Error]', err);
+      return checkoutUrl;
+    }
+  })();
 
   const shortSummary = profileSummaries[dominant.code] || content.whatItMeans[0];
 
@@ -779,7 +785,7 @@ export function QuizResult({
                 </p>
                 
                 <a
-                  href={checkoutUrl}
+                  href={finalCheckoutUrl}
                   onClick={handleCTAClick}
                   className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold text-lg rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(249,115,22,0.2)] block text-center uppercase tracking-wider flex flex-col items-center justify-center gap-1"
                 >
@@ -924,7 +930,7 @@ export function QuizResult({
                   Adquira agora o seu Diagnóstico Completo com todos os 4 bônus de implementação inclusos.
                 </p>
                 <a
-                  href={checkoutUrl}
+                  href={finalCheckoutUrl}
                   onClick={handleCTAClick}
                   className="inline-flex flex-col items-center justify-center gap-1 px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold text-sm sm:text-base md:text-lg rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(249,115,22,0.2)] block text-center uppercase tracking-wider w-full sm:w-auto"
                 >
