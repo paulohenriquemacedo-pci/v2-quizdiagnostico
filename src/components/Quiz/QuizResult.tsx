@@ -184,7 +184,7 @@ export function QuizResult({
     setOpenFaq(openFaq === index ? null : index);
   };
 
-  const checkoutUrl = "https://payfast.greenn.com.br/ascwjh4/offer/T0ft6Q?ch_id=135591&b_id_1=xagf247&b_offer_1=Lt0Nw8&b_id_2=zaw8gdy&b_offer_2=nLg6Ts";
+  const checkoutUrl = "https://pay.hotmart.com/T107146469P?checkoutMode=10";
 
   const shortSummary = profileSummaries[dominant.code] || content.whatItMeans[0];
 

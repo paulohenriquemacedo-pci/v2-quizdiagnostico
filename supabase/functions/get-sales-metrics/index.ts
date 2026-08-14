@@ -93,8 +93,9 @@ Deno.serve(async (req) => {
     const responses = responsesResult.data || [];
 
     // Map email -> UTM captured at lead time, for attributing purchases back to campaigns.
-    // Greenn's own webhook doesn't reliably carry UTM data, but we already have it from our
-    // own funnel — joining by email is a simple, self-contained way to attribute revenue.
+    // The sales webhook (hotmart-sales-webhook) doesn't reliably carry UTM data, but we already
+    // have it from our own funnel — joining by email is a simple, self-contained way to
+    // attribute revenue.
     const utmByEmail = new Map<string, { utm_source: string | null; utm_medium: string | null; utm_campaign: string | null }>();
     for (const r of responses) {
       if (r.email) utmByEmail.set(r.email.toLowerCase(), { utm_source: r.utm_source, utm_medium: r.utm_medium, utm_campaign: r.utm_campaign });

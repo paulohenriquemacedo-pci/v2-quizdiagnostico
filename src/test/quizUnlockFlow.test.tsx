@@ -36,7 +36,7 @@ describe('Quiz Unlock Flow & Consent Verification (26 Test Criteria)', () => {
     expect(screen.getByText('Seu diagnóstico detalhado e seu protocolo inicial estão prontos.')).toBeInTheDocument();
   });
 
-  it('4 & 5 & 25. Detailed diagnosis, recommendations, offer, and Greenn CTAs are NOT in DOM before unlock', () => {
+  it('4 & 5 & 25. Detailed diagnosis, recommendations, offer, and checkout CTAs are NOT in DOM before unlock', () => {
     render(
       <QuizResult
         result={mockResult}
@@ -168,7 +168,7 @@ describe('Quiz Unlock Flow & Consent Verification (26 Test Criteria)', () => {
     expect(formatPhone('11999998888')).toBe('(11) 99999-8888');
   });
 
-  it('18 & 26. Success unlocks full detailed diagnosis and renders offer & Greenn CTAs in Estado 2', () => {
+  it('18 & 26. Success unlocks full detailed diagnosis and renders offer & checkout CTAs in Estado 2', () => {
     render(
       <QuizResult
         result={mockResult}

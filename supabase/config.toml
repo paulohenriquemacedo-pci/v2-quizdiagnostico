@@ -1,4 +1,4 @@
 project_id = "assajsfgzsupphruwjao"
 
-[functions.greenn-sales-webhook]
+[functions.hotmart-sales-webhook]
 verify_jwt = false

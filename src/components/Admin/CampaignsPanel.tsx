@@ -206,7 +206,7 @@ export function CampaignsPanel({ revenueByCampaign, leadsByCampaign }: Campaigns
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>
             O valor de receita registrado (<code>purchases.amount</code>) ainda não foi validado contra um payload
-            real da Greenn — trate CAC e ROAS abaixo como estimativas até essa checagem ser feita.
+            real da Hotmart — trate CAC e ROAS abaixo como estimativas até essa checagem ser feita.
           </span>
         </div>
 
