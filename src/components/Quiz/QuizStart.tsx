@@ -1,5 +1,4 @@
 import { profiles } from '@/data/profiles';
-import { trackQuizStart } from '@/lib/analytics';
 
 interface QuizStartProps {
   onStart: () => void;
@@ -7,7 +6,6 @@ interface QuizStartProps {
 
 export function QuizStart({ onStart }: QuizStartProps) {
   const handleStart = () => {
-    trackQuizStart();
     onStart();
   };
   const profileList = Object.values(profiles);

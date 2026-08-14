@@ -3,7 +3,7 @@ import { QuizState, QuizResult } from '@/types/quiz.types';
 import { questions } from '@/data/questions';
 import { calculateResult } from '@/lib/scoring';
 import { submitQuizToDatabase } from '@/lib/api';
-import { trackQuizStart } from '@/lib/trackQuizStart';
+import { trackQuizStarted } from '@/lib/events';
 
 const STORAGE_KEY = 'quiz_progress';
 const UNLOCKED_KEY = 'quiz_unlocked_session';
@@ -73,7 +73,7 @@ export function useQuiz() {
   const startQuiz = useCallback(() => {
     setState(prev => ({ ...prev, step: 'context' }));
     console.log('[Quiz] Start clicked, moving to context question');
-    trackQuizStart();
+    trackQuizStarted();
   }, []);
 
   const answerContext = useCallback((phase: string) => {

@@ -2,10 +2,9 @@ import { useEffect, useState, useRef } from 'react';
 import { QuizResult as QuizResultType } from '@/types/quiz.types';
 import { profileResults, GOVERNANCE_TEXT, TRANSITION_BASE, TRANSITION_COMPLEMENT } from '@/data/profileResults';
 import { profileSummaries } from '@/data/profileSummaries';
-import { trackCTAClick, trackResultView } from '@/lib/analytics';
-import { getAttribution } from '@/lib/attribution';
-import { supabase } from '@/integrations/supabase/client';
+import { trackResultView } from '@/lib/analytics';
 import { QuizEmail, UnlockSubmitParams } from './QuizEmail';
+import { CheckoutCTA } from './CheckoutCTA';
 
 interface QuizResultProps {
   result: QuizResultType;
@@ -15,12 +14,6 @@ interface QuizResultProps {
   isUnlocked?: boolean;
   onUnlockSubmit?: (data: UnlockSubmitParams) => Promise<{ success: boolean; error?: string }>;
   onReset: () => void;
-}
-
-// Detect device type
-function getDeviceType(): string {
-  if (typeof window === 'undefined') return 'unknown';
-  return /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
 }
 
 const testimonials = [
@@ -135,62 +128,9 @@ export function QuizResult({
     }
   };
 
-  const handleCTAClick = () => {
-    const attribution = getAttribution();
-    const deviceType = getDeviceType();
-
-    trackCTAClick({
-      email,
-      dominantProfile: dominant.name,
-      dominantCode: dominant.code,
-      utmSource: attribution.utm_source,
-      utmMedium: attribution.utm_medium,
-      utmCampaign: attribution.utm_campaign,
-      deviceType,
-    });
-
-    supabase.from('cta_clicks').insert({
-      email,
-      dominant_profile: dominant.name,
-      dominant_code: dominant.code,
-      utm_source: attribution.utm_source,
-      utm_medium: attribution.utm_medium,
-      utm_campaign: attribution.utm_campaign,
-      utm_content: attribution.utm_content,
-      utm_term: attribution.utm_term,
-      fbclid: attribution.fbclid,
-      device_type: deviceType,
-    }).then(({ error }) => {
-      if (error) console.error('[cta_clicks] Insert error:', error);
-    });
-
-    // Deliberately NOT calling preventDefault here: this needs to be a real, native <a> click
-    // that the browser actually navigates on, so third-party click-based tracking (e.g. LowTrack's
-    // pixel.js) can detect the outbound checkout link and fire InitiateCheckout itself. The UTM
-    // forwarding happens ahead of time in `finalCheckoutUrl`, baked into the href, instead of
-    // being appended via window.location.href at click time.
-  };
-
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
   };
-
-  const checkoutUrl = "https://pay.hotmart.com/T107146469P?checkoutMode=10";
-
-  const finalCheckoutUrl = (() => {
-    if (typeof window === 'undefined') return checkoutUrl;
-    try {
-      const url = new URL(checkoutUrl);
-      const searchParams = new URLSearchParams(window.location.search);
-      searchParams.forEach((value, key) => {
-        url.searchParams.set(key, value);
-      });
-      return url.toString();
-    } catch (err) {
-      console.error('[CTA URL Error]', err);
-      return checkoutUrl;
-    }
-  })();
 
   const shortSummary = profileSummaries[dominant.code] || content.whatItMeans[0];
 
@@ -784,14 +724,16 @@ export function QuizResult({
                   Por apenas <span className="text-emerald-400">R$ 27,00</span>
                 </p>
                 
-                <a
-                  href={finalCheckoutUrl}
-                  onClick={handleCTAClick}
+                <CheckoutCTA
+                  email={email}
+                  dominantProfile={dominant.name}
+                  dominantCode={dominant.code}
+                  isDebugMode={isDebugMode}
                   className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold text-lg rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(249,115,22,0.2)] block text-center uppercase tracking-wider flex flex-col items-center justify-center gap-1"
                 >
                   <span>Quero meu Diagnóstico por R$27</span>
                   <span className="text-xs md:text-sm font-semibold opacity-90 mt-1.5 normal-case">Acesso imediato • Garantia de 7 dias</span>
-                </a>
+                </CheckoutCTA>
 
                 {/* Payment Flags */}
                 <div className="flex flex-wrap items-center justify-center gap-2 mt-4 opacity-80">
@@ -929,14 +871,16 @@ export function QuizResult({
                 <p className="text-xs text-slate-400 mb-6 leading-relaxed">
                   Adquira agora o seu Diagnóstico Completo com todos os 4 bônus de implementação inclusos.
                 </p>
-                <a
-                  href={finalCheckoutUrl}
-                  onClick={handleCTAClick}
+                <CheckoutCTA
+                  email={email}
+                  dominantProfile={dominant.name}
+                  dominantCode={dominant.code}
+                  isDebugMode={isDebugMode}
                   className="inline-flex flex-col items-center justify-center gap-1 px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold text-sm sm:text-base md:text-lg rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(249,115,22,0.2)] block text-center uppercase tracking-wider w-full sm:w-auto"
                 >
                   <span>Quero meu Diagnóstico por R$27</span>
                   <span className="text-xs md:text-sm font-semibold opacity-90 mt-1.5 normal-case">Acesso imediato • Garantia incondicional de 7 dias</span>
-                </a>
+                </CheckoutCTA>
 
                 {/* Payment Flags */}
                 <div className="flex flex-wrap items-center justify-center gap-2 mt-4 opacity-80">

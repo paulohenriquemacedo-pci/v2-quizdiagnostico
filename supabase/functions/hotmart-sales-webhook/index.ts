@@ -10,46 +10,16 @@
 // secret — get the real value from this product's Webhook settings screen in Hotmart and set it
 // with `supabase secrets set HOTMART_HOTTOK=...`.
 //
-// NOTE: the field mapping below (buyer/purchase/product paths, amount unit) is built from
-// Hotmart's public Webhook 2.0 documentation but is UNVERIFIED against a real payload from this
-// account — the exact same situation Greenn's webhook was in before its first real delivery
-// revealed a wrong amount interpretation (see the raw_payload migration's commit message). Use
-// Hotmart's "Enviar teste" button on the Webhook settings screen to fire a real test event at this
-// endpoint, then inspect the `raw_payload` column of the row it creates in `purchases` to
-// confirm/correct the paths below before trusting the sales panel numbers. Unlike Greenn (which
-// sent amount in centavos), Hotmart's price fields are already in the currency's normal decimal
-// unit (e.g. 97.00 for R$97) — do NOT divide by 100 here.
+// Payload parsing lives in parsePayload.ts, not here — see that file for the field-mapping caveats
+// (unverified against a real payload) and for why it's kept separate from this HTTP/auth/DB layer.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-interface HotmartPurchasePayload {
-  event?: string;
-  data?: {
-    product?: { name?: string };
-    buyer?: { name?: string; email?: string; checkout_phone?: string };
-    purchase?: {
-      transaction?: string;
-      status?: string;
-      price?: { value?: number };
-      full_price?: { value?: number };
-      order_date?: number;
-      approved_date?: number;
-    };
-  };
-  hottok?: string;
-}
-
-// Hotmart's event/status vocabulary -> the internal status vocabulary get-sales-metrics expects
-// (kept identical to what greenn-sales-webhook produced, so get-sales-metrics needed zero changes).
-function normalizeStatus(event: string | undefined, rawStatus: string | undefined): string {
-  const key = (event || rawStatus || '').toUpperCase();
-  if (key.includes('APPROVED') || key.includes('COMPLETE')) return 'paid';
-  if (key.includes('CHARGEBACK') || key.includes('PROTEST')) return 'chargedback';
-  if (key.includes('REFUND')) return 'refunded';
-  if (key.includes('CANCEL') || key.includes('EXPIRED')) return 'refused';
-  if (key.includes('BILLET') || key.includes('DELAYED')) return 'waiting_payment';
-  return 'created';
-}
+import {
+  HotmartPurchasePayload,
+  hasPurchaseData,
+  isHottokValid,
+  parseHotmartPayload,
+} from './parsePayload.ts';
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
@@ -62,8 +32,7 @@ Deno.serve(async (req) => {
   try {
     const body = (await req.json()) as HotmartPurchasePayload;
 
-    const expectedToken = Deno.env.get('HOTMART_HOTTOK');
-    if (!expectedToken || body.hottok !== expectedToken) {
+    if (!isHottokValid(body, Deno.env.get('HOTMART_HOTTOK'))) {
       console.error('[hotmart-sales-webhook] Invalid or missing hottok');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -71,35 +40,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    const purchase = body.data?.purchase;
-    const buyer = body.data?.buyer;
-    const product = body.data?.product;
-
-    if (!purchase && !body.event) {
+    if (!hasPurchaseData(body)) {
       return new Response(JSON.stringify({ error: 'Missing purchase data' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
+    const sale = parseHotmartPayload(body);
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const saleId = purchase?.transaction ?? null;
-    const amount = purchase?.price?.value ?? purchase?.full_price?.value ?? 0;
-    const saleCreatedAtMs = purchase?.approved_date ?? purchase?.order_date;
-
     const { error } = await adminClient.from('purchases').upsert(
       {
-        sale_id: saleId,
-        status: normalizeStatus(body.event, purchase?.status),
-        email: buyer?.email ?? null,
-        name: buyer?.name ?? null,
-        phone: buyer?.checkout_phone ?? null,
-        amount,
-        product_name: product?.name ?? null,
-        sale_created_at: saleCreatedAtMs ? new Date(saleCreatedAtMs).toISOString() : null,
+        ...sale,
         updated_at: new Date().toISOString(),
         raw_payload: body,
       },
@@ -114,7 +70,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[hotmart-sales-webhook] Recorded sale (event=${body.event}, sale_id=${saleId})`);
+    console.log(`[hotmart-sales-webhook] Recorded sale (event=${body.event}, sale_id=${sale.sale_id})`);
 
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
