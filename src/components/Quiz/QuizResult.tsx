@@ -2,9 +2,9 @@ import { useEffect, useState, useRef } from 'react';
 import { QuizResult as QuizResultType } from '@/types/quiz.types';
 import { profileResults, GOVERNANCE_TEXT, TRANSITION_BASE, TRANSITION_COMPLEMENT } from '@/data/profileResults';
 import { profileSummaries } from '@/data/profileSummaries';
-import { trackResultView } from '@/lib/analytics';
 import { QuizEmail, UnlockSubmitParams } from './QuizEmail';
 import { CheckoutCTA } from './CheckoutCTA';
+
 
 interface QuizResultProps {
   result: QuizResultType;
@@ -83,14 +83,8 @@ export function QuizResult({
   const unlocked = isUnlocked || isDebugMode;
   const diagnosisRef = useRef<HTMLDivElement>(null);
 
-  // Track result view on mount
-  useEffect(() => {
-    if (content) {
-      trackResultView(dominant.name, dominant.code);
-    }
-  }, [dominant.name, dominant.code, content]);
-
   // Smooth scroll when unlocked
+
   useEffect(() => {
     if (unlocked && diagnosisRef.current) {
       diagnosisRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -725,10 +719,6 @@ export function QuizResult({
                 </p>
                 
                 <CheckoutCTA
-                  email={email}
-                  dominantProfile={dominant.name}
-                  dominantCode={dominant.code}
-                  isDebugMode={isDebugMode}
                   className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold text-lg rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(249,115,22,0.2)] block text-center uppercase tracking-wider flex flex-col items-center justify-center gap-1"
                 >
                   <span>Quero meu Diagnóstico por R$27</span>
@@ -872,10 +862,6 @@ export function QuizResult({
                   Adquira agora o seu Diagnóstico Completo com todos os 4 bônus de implementação inclusos.
                 </p>
                 <CheckoutCTA
-                  email={email}
-                  dominantProfile={dominant.name}
-                  dominantCode={dominant.code}
-                  isDebugMode={isDebugMode}
                   className="inline-flex flex-col items-center justify-center gap-1 px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold text-sm sm:text-base md:text-lg rounded-xl transition-all duration-200 hover:scale-[1.02] shadow-[0_0_20px_rgba(249,115,22,0.2)] block text-center uppercase tracking-wider w-full sm:w-auto"
                 >
                   <span>Quero meu Diagnóstico por R$27</span>

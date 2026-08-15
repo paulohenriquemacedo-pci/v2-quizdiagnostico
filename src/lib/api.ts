@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { QuizResult } from '@/types/quiz.types';
-import { getAttribution } from '@/lib/attribution';
 
 export interface SubmitQuizParams {
   name: string;
@@ -42,7 +41,6 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
     return { success: false, error: 'O consentimento de privacidade é obrigatório para gerar o diagnóstico.' };
   }
 
-  const attribution = getAttribution();
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedName = name.trim().replace(/\s+/g, ' ');
   const normalizedPhone = phone.replace(/\D/g, '');
@@ -67,12 +65,6 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
       dominant_code: result.dominant.code,
       dominant_score: result.dominant.score,
       dominant_intensity: result.dominant.intensity,
-      utm_source: attribution.utm_source,
-      utm_medium: attribution.utm_medium,
-      utm_campaign: attribution.utm_campaign,
-      utm_content: attribution.utm_content,
-      utm_term: attribution.utm_term,
-      fbclid: attribution.fbclid,
       device_type: getDeviceType(),
       privacy_consent: true,
       privacy_consent_at: privacyConsentAt || nowIso,
@@ -105,12 +97,6 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
         dominant_code: result.dominant.code,
         dominant_score: result.dominant.score,
         dominant_intensity: result.dominant.intensity,
-        utm_source: attribution.utm_source,
-        utm_medium: attribution.utm_medium,
-        utm_campaign: attribution.utm_campaign,
-        utm_content: attribution.utm_content,
-        utm_term: attribution.utm_term,
-        fbclid: attribution.fbclid,
         device_type: getDeviceType()
       };
 
@@ -133,3 +119,4 @@ export async function submitQuizToDatabase(params: SubmitQuizParams): Promise<{ 
     return { success: false, error: 'Não foi possível liberar seu diagnóstico agora. Verifique sua conexão e tente novamente.' };
   }
 }
+

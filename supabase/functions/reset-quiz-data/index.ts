@@ -76,17 +76,18 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { tables } = body;
 
-    // Default to all tables if not specified
-    const tablesToReset = tables || ["quiz_starts", "quiz_responses", "cta_clicks", "purchases"];
+    // Default to quiz_responses
+    const tablesToReset = tables || ["quiz_responses"];
 
     const results: Record<string, { deleted: number; error?: string }> = {};
 
     // Delete data from each specified table
     for (const table of tablesToReset) {
-      if (!["quiz_starts", "quiz_responses", "cta_clicks", "purchases"].includes(table)) {
+      if (!["quiz_responses", "quiz_starts", "cta_clicks", "purchases"].includes(table)) {
         results[table] = { deleted: 0, error: "Invalid table name" };
         continue;
       }
+
 
       try {
         // Count existing records first

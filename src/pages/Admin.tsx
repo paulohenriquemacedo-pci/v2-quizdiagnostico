@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Download, RefreshCw, Lock, Users, TrendingUp, LogOut, Trash2, MousePointerClick, PlayCircle, XCircle, Target, RotateCcw, DollarSign, Clock, Ban, Wallet } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, Lock, Users, TrendingUp, LogOut, Trash2, RotateCcw, Search, CheckCircle2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { EditResponseDialog } from '@/components/Admin/EditResponseDialog';
-import { CampaignsPanel } from '@/components/Admin/CampaignsPanel';
+
 interface QuizResponse {
   id: string;
   created_at: string;
@@ -30,6 +30,7 @@ interface QuizResponse {
   email: string;
   phone: string | null;
   answers: number[];
+  research_phase?: string | null;
   score_perfeccionista: number;
   score_multitarefa: number;
   score_procrastinador: number;
@@ -40,62 +41,11 @@ interface QuizResponse {
   dominant_code: string | null;
   dominant_score: number;
   dominant_intensity: string | null;
-  utm_source: string | null;
-  utm_medium: string | null;
-  utm_campaign: string | null;
   device_type: string | null;
   privacy_consent?: boolean;
   privacy_consent_at?: string | null;
   marketing_consent?: boolean;
   marketing_consent_at?: string | null;
-}
-
-interface FunnelMetrics {
-  totalStarts: number;
-  totalCompletions: number;
-  totalCtaClicks: number;
-  dropoffs: number;
-  completionRate: number;
-  dropoffRate: number;
-  ctaClickRate: number;
-  recentClicks: Array<{
-    id: string;
-    clicked_at: string;
-    email: string | null;
-    dominant_profile: string | null;
-  }>;
-}
-
-interface SalesMetrics {
-  totalRevenue: number;
-  totalSalesCount: number;
-  totalSalesAttempted: number;
-  pendingCount: number;
-  refusedCount: number;
-  refundedCount: number;
-  arpu: number;
-  revenueByCampaign: Array<{
-    source: string;
-    campaign: string;
-    revenue: number;
-    sales: number;
-  }>;
-  leadsByCampaign: Array<{
-    source: string;
-    campaign: string;
-    count: number;
-  }>;
-  recentPurchases: Array<{
-    id: string;
-    sale_id: string | null;
-    status: string;
-    email: string | null;
-    name: string | null;
-    amount: number | null;
-    product_name: string | null;
-    sale_created_at: string | null;
-    created_at: string;
-  }>;
 }
 
 export default function Admin() {
@@ -108,8 +58,7 @@ export default function Admin() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [responses, setResponses] = useState<QuizResponse[]>([]);
-  const [funnelMetrics, setFunnelMetrics] = useState<FunnelMetrics | null>(null);
-  const [salesMetrics, setSalesMetrics] = useState<SalesMetrics | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -117,17 +66,40 @@ export default function Admin() {
   const [isDeletingBatch, setIsDeletingBatch] = useState(false);
   const [isResettingData, setIsResettingData] = useState(false);
 
+  const checkAdminRole = useCallback(async () => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        setIsAdmin(false);
+        setIsCheckingAuth(false);
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('get-quiz-responses');
+      
+      if (error) {
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(true);
+        fetchResponses();
+      }
+    } catch (err) {
+      console.error('[Admin] Error checking admin role:', err);
+      setIsAdmin(false);
+    } finally {
+      setIsCheckingAuth(false);
+    }
+  }, []);
+
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer admin check with setTimeout to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
-            checkAdminRole(session.user.id);
+            checkAdminRole();
           }, 0);
         } else {
           setIsAdmin(false);
@@ -136,49 +108,19 @@ export default function Admin() {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkAdminRole(session.user.id);
+        checkAdminRole();
       } else {
         setIsCheckingAuth(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAdminRole = async (userId: string) => {
-    try {
-      // Use Edge Function to verify admin status (avoids RLS issues)
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        setIsAdmin(false);
-        setIsCheckingAuth(false);
-        return;
-      }
-
-      // Try to fetch responses - if successful, user is admin
-      const { error } = await supabase.functions.invoke('get-quiz-responses');
-      
-      if (error) {
-        setIsAdmin(false);
-      } else {
-        setIsAdmin(true);
-        fetchResponses();
-        fetchFunnelMetrics();
-        fetchSalesMetrics();
-      }
-    } catch (err) {
-      console.error('[Admin] Error checking admin role:', err);
-      setIsAdmin(false);
-    } finally {
-      setIsCheckingAuth(false);
-    }
-  };
+  }, [checkAdminRole]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,8 +152,7 @@ export default function Admin() {
           setEmail('');
           setPassword('');
           setError(null);
-          // Show success message - user needs admin role to be assigned
-          alert('Conta criada com sucesso! Aguarde a atribuição de permissões de administrador.');
+          toast.success('Conta criada com sucesso! Aguarde a atribuição de permissões de administrador.');
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -244,40 +185,7 @@ export default function Admin() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setResponses([]);
-    setFunnelMetrics(null);
     setIsAdmin(false);
-  };
-
-  const fetchFunnelMetrics = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('get-funnel-metrics');
-      
-      if (error) {
-        console.error('[Admin] Error fetching funnel metrics:', error);
-        return;
-      }
-      
-      setFunnelMetrics(data?.data || null);
-      console.log('[Admin] Fetched funnel metrics:', data?.data);
-    } catch (err) {
-      console.error('[Admin] Error fetching funnel metrics:', err);
-    }
-  };
-
-  const fetchSalesMetrics = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('get-sales-metrics');
-
-      if (error) {
-        console.error('[Admin] Error fetching sales metrics:', error);
-        return;
-      }
-
-      setSalesMetrics(data?.data || null);
-      console.log('[Admin] Fetched sales metrics:', data?.data);
-    } catch (err) {
-      console.error('[Admin] Error fetching sales metrics:', err);
-    }
   };
 
   const fetchResponses = async () => {
@@ -292,7 +200,6 @@ export default function Admin() {
       }
 
       setResponses(data?.data || []);
-      console.log('[Admin] Fetched responses:', data?.data?.length || 0);
     } catch (err) {
       console.error('[Admin] Error fetching responses:', err);
       setError('Erro ao carregar dados. Verifique se você tem permissões de administrador.');
@@ -305,7 +212,7 @@ export default function Admin() {
     setDeletingId(id);
     
     try {
-      const { data, error } = await supabase.functions.invoke('delete-quiz-response', {
+      const { error } = await supabase.functions.invoke('delete-quiz-response', {
         body: { id }
       });
 
@@ -313,7 +220,6 @@ export default function Admin() {
         throw new Error(error.message);
       }
 
-      // Remove from local state
       setResponses(prev => prev.filter(r => r.id !== id));
       setSelectedIds(prev => {
         const newSet = new Set(prev);
@@ -321,7 +227,6 @@ export default function Admin() {
         return newSet;
       });
       toast.success(`Resposta de ${email} excluída com sucesso`);
-      console.log('[Admin] Deleted response:', id);
     } catch (err) {
       console.error('[Admin] Error deleting response:', err);
       toast.error('Erro ao excluir resposta');
@@ -332,7 +237,7 @@ export default function Admin() {
 
   const handleUpdate = async (id: string, data: { name: string; email: string; phone: string }) => {
     try {
-      const { data: result, error } = await supabase.functions.invoke('update-quiz-response', {
+      const { error } = await supabase.functions.invoke('update-quiz-response', {
         body: { id, ...data }
       });
 
@@ -340,7 +245,6 @@ export default function Admin() {
         throw new Error(error.message);
       }
 
-      // Update local state
       setResponses(prev => prev.map(r => 
         r.id === id ? { ...r, name: data.name, email: data.email, phone: data.phone } : r
       ));
@@ -379,7 +283,6 @@ export default function Admin() {
       }
     }
 
-    // Update local state
     setResponses(prev => prev.filter(r => !selectedIds.has(r.id)));
     setSelectedIds(new Set());
     
@@ -397,41 +300,16 @@ export default function Admin() {
     
     try {
       const { data, error } = await supabase.functions.invoke('reset-quiz-data', {
-        body: { tables: ['quiz_starts', 'quiz_responses', 'cta_clicks', 'purchases'] }
+        body: { tables: ['quiz_responses'] }
       });
 
       if (error) {
         throw new Error(error.message);
       }
 
-      // Clear local state
       setResponses([]);
-      setFunnelMetrics({
-        totalStarts: 0,
-        totalCompletions: 0,
-        totalCtaClicks: 0,
-        dropoffs: 0,
-        completionRate: 0,
-        dropoffRate: 0,
-        ctaClickRate: 0,
-        recentClicks: [],
-      });
-      setSalesMetrics({
-        totalRevenue: 0,
-        totalSalesCount: 0,
-        totalSalesAttempted: 0,
-        pendingCount: 0,
-        refusedCount: 0,
-        refundedCount: 0,
-        arpu: 0,
-        revenueByCampaign: [],
-        leadsByCampaign: [],
-        recentPurchases: [],
-      });
       setSelectedIds(new Set());
-      
-      toast.success(data?.message || 'Todos os dados foram resetados');
-      console.log('[Admin] Reset complete:', data);
+      toast.success(data?.message || 'Todas as respostas foram resetadas');
     } catch (err) {
       console.error('[Admin] Error resetting data:', err);
       toast.error('Erro ao resetar dados');
@@ -441,43 +319,51 @@ export default function Admin() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === responses.length) {
+    if (selectedIds.size === filteredResponses.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(responses.map(r => r.id)));
+      setSelectedIds(new Set(filteredResponses.map(r => r.id)));
     }
   };
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
   };
 
   const exportToCSV = () => {
-    if (responses.length === 0) return;
-
     const headers = [
-      'Data', 'Nome', 'Email', 'WhatsApp', 
-      'Perfil Dominante', 'Código', 'Score', 'Intensidade',
-      'Perfeccionista', 'Multitarefa', 'Procrastinador', 
-      'Analista', 'Dependente', 'Sobrecarregado',
-      'UTM Source', 'UTM Medium', 'UTM Campaign', 'Device'
+      'Data',
+      'Nome',
+      'Email',
+      'WhatsApp',
+      'Fase da Pesquisa',
+      'Perfil Dominante',
+      'Score Dominante',
+      'Intensidade',
+      'Perfeccionista',
+      'Multitarefa',
+      'Procrastinador',
+      'Analista',
+      'Dependente',
+      'Sobrecarregado',
+      'Dispositivo',
+      'Consentimento LGPD',
+      'Consentimento Marketing'
     ];
 
     const rows = responses.map(r => [
-      new Date(r.created_at).toLocaleString('pt-BR'),
+      new Date(r.created_at).toLocaleDateString('pt-BR'),
       r.name || '',
       r.email,
       r.phone || '',
+      r.research_phase || '',
       r.dominant_profile,
-      r.dominant_code || '',
       r.dominant_score,
       r.dominant_intensity || '',
       r.score_perfeccionista,
@@ -486,523 +372,355 @@ export default function Admin() {
       r.score_analista,
       r.score_dependente,
       r.score_sobrecarregado,
-      r.utm_source || '',
-      r.utm_medium || '',
-      r.utm_campaign || '',
-      r.device_type || ''
+      r.device_type || '',
+      r.privacy_consent ? 'Sim' : 'Não',
+      r.marketing_consent ? 'Sim' : 'Não'
     ]);
 
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      headers.join(';'),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(';'))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `quiz_responses_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `quiz-respostas-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
   };
 
   const getProfileColor = (profile: string) => {
-    const colors: Record<string, string> = {
-      'Perfeccionista Paralisado': 'bg-purple-100 text-purple-800',
-      'Multitarefa Caótico': 'bg-orange-100 text-orange-800',
-      'Procrastinador Criativo': 'bg-cyan-100 text-cyan-800',
-      'Analista Perpétuo': 'bg-blue-100 text-blue-800',
-      'Dependente de Motivação': 'bg-pink-100 text-pink-800',
-      'Sobrecarregado Sistêmico': 'bg-red-100 text-red-800',
-    };
-    return colors[profile] || 'bg-gray-100 text-gray-800';
+    switch (profile) {
+      case 'O Perfeccionista Paralisado':
+        return 'bg-violet-500/10 text-violet-400 border-violet-500/20';
+      case 'O Multitarefa Disperso':
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'O Procrastinador Ansioso':
+        return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      case 'O Analista Exaustivo':
+        return 'bg-teal-500/10 text-teal-400 border-teal-500/20';
+      case 'O Dependente de Validação':
+        return 'bg-pink-500/10 text-pink-400 border-pink-500/20';
+      case 'O Sobrecarregado Solitário':
+        return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+      default:
+        return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+    }
   };
 
-  const getProfileStats = () => {
-    const stats: Record<string, number> = {};
+  const stats = useMemo(() => {
+    const total = responses.length;
+    if (total === 0) return [];
+
+    const counts: Record<string, number> = {};
     responses.forEach(r => {
-      stats[r.dominant_profile] = (stats[r.dominant_profile] || 0) + 1;
+      counts[r.dominant_profile] = (counts[r.dominant_profile] || 0) + 1;
     });
-    return Object.entries(stats)
-      .sort(([, a], [, b]) => b - a)
-      .map(([profile, count]) => ({ profile, count, percentage: ((count / responses.length) * 100).toFixed(1) }));
-  };
 
-  // Loading state while checking auth
+    return Object.entries(counts)
+      .map(([profile, count]) => ({
+        profile,
+        count,
+        percentage: ((count / total) * 100).toFixed(1)
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [responses]);
+
+  const marketingConsentCount = useMemo(() => {
+    return responses.filter(r => r.marketing_consent).length;
+  }, [responses]);
+
+  const filteredResponses = useMemo(() => {
+    if (!searchTerm.trim()) return responses;
+    const term = searchTerm.toLowerCase();
+    return responses.filter(r => 
+      (r.name && r.name.toLowerCase().includes(term)) ||
+      r.email.toLowerCase().includes(term) ||
+      (r.phone && r.phone.includes(term)) ||
+      r.dominant_profile.toLowerCase().includes(term)
+    );
+  }, [responses, searchTerm]);
+
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <RefreshCw className="h-8 w-8 animate-spin text-violet-500" />
       </div>
     );
   }
 
-  // Not logged in - show login/signup form
-  if (!user) {
+  if (!session || !isAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-            <CardTitle>Área Administrativa</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              {isSignUp ? 'Crie sua conta' : 'Faça login com sua conta de administrador'}
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-slate-900 border-slate-800 text-slate-100">
+          <CardHeader className="text-center space-y-2">
+            <div className="mx-auto w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center border border-violet-500/20 mb-2">
+              <Lock className="w-6 h-6 text-violet-400" />
+            </div>
+            <CardTitle className="text-xl text-white font-bold">Painel do Quiz</CardTitle>
+            <p className="text-xs text-slate-400">
+              {isSignUp ? 'Crie uma conta para solicitar acesso' : 'Entre com suas credenciais de administrador'}
             </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAuth} className="space-y-4">
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Input
-                type="password"
-                placeholder="Senha (mínimo 6 caracteres)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                minLength={6}
-                required
-              />
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              {error && (
+                <div className="p-3 text-xs bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg">
+                  {error}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Input
+                  type="email"
+                  placeholder="Seu email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-slate-950 border-slate-800 text-white"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-slate-950 border-slate-800 text-white"
+                  required
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold"
+                disabled={isLoading}
+              >
                 {isLoading ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    {isSignUp ? 'Cadastrando...' : 'Entrando...'}
-                  </>
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                ) : isSignUp ? (
+                  'Criar Conta'
                 ) : (
-                  isSignUp ? 'Criar Conta' : 'Entrar'
+                  'Entrar'
                 )}
               </Button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError(null);
+                  }}
+                  className="text-xs text-violet-400 hover:underline"
+                >
+                  {isSignUp ? 'Já tem uma conta? Faça login' : 'Primeiro acesso? Crie uma conta'}
+                </button>
+              </div>
             </form>
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-              }}
-              className="block w-full mt-4 text-center text-sm text-primary hover:underline"
-            >
-              {isSignUp ? 'Já tem conta? Faça login' : 'Não tem conta? Cadastre-se'}
-            </button>
-            <Link to="/" className="block mt-2 text-center text-sm text-muted-foreground hover:underline">
-              ← Voltar ao Quiz
-            </Link>
           </CardContent>
         </Card>
       </div>
     );
   }
-
-  // Logged in but not admin
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <Lock className="w-12 h-12 mx-auto text-destructive mb-2" />
-            <CardTitle>Acesso Negado</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              Você não tem permissões de administrador.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-center text-muted-foreground">
-              Logado como: {user.email}
-            </p>
-            <Button variant="outline" className="w-full" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
-            <Link to="/" className="block text-center text-sm text-muted-foreground hover:underline">
-              ← Voltar ao Quiz
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const stats = getProfileStats();
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        {/* Top Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div className="flex items-center gap-3">
             <Link to="/">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold">Painel Administrativo</h1>
-              <p className="text-muted-foreground">Respostas do Quiz de Produtividade</p>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Painel de Respostas do Quiz</h1>
+              <p className="text-xs text-slate-400">Sistema A.C.A.D.E.M.I.A • Gestão de Leads e Diagnósticos</p>
             </div>
           </div>
-          <div className="flex gap-2 items-center">
-            <span className="text-sm text-muted-foreground hidden md:inline">
-              {user.email}
-            </span>
-            <Button variant="outline" onClick={() => { fetchResponses(); fetchFunnelMetrics(); fetchSalesMetrics(); }} disabled={isLoading}>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={fetchResponses} disabled={isLoading} className="border-slate-800 bg-slate-900 text-slate-200">
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
-            <Button onClick={exportToCSV} disabled={responses.length === 0}>
+            <Button variant="outline" size="sm" onClick={exportToCSV} disabled={responses.length === 0} className="border-slate-800 bg-slate-900 text-slate-200">
               <Download className="h-4 w-4 mr-2" />
               Exportar CSV
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={isResettingData}>
+                <Button variant="destructive" size="sm" disabled={isResettingData}>
                   <RotateCcw className={`h-4 w-4 mr-2 ${isResettingData ? 'animate-spin' : ''}`} />
-                  Zerar Dados
+                  Zerar Respostas
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="bg-slate-900 border-slate-800 text-slate-100">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Zerar todos os dados do quiz?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação irá excluir permanentemente:
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>Todos os registros de quiz iniciados</li>
-                      <li>Todas as respostas do quiz</li>
-                      <li>Todos os cliques no CTA</li>
-                      <li>Todos os registros de vendas</li>
-                    </ul>
-                    <p className="mt-3 font-medium text-destructive">
-                      Esta ação não pode ser desfeita!
-                    </p>
+                  <AlertDialogTitle>Zerar todas as respostas?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-slate-400">
+                    Esta ação excluirá permanentemente todas as respostas salvas do quiz. Esta operação não pode ser desfeita.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel className="bg-slate-800 text-slate-200 border-slate-700">Cancelar</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleResetAllData}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    Sim, zerar tudo
+                    Sim, zerar
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-slate-400 hover:text-white">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
-        {/* Funnel Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-full bg-blue-500/10">
-                  <PlayCircle className="h-5 w-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Quiz Iniciados</p>
-                  <p className="text-2xl font-bold">{funnelMetrics?.totalStarts || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-full bg-green-500/10">
-                  <Target className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Quiz Finalizados</p>
-                  <p className="text-2xl font-bold">{funnelMetrics?.totalCompletions || responses.length}</p>
-                  <p className="text-xs text-green-600 font-medium">
-                    {funnelMetrics?.completionRate || 0}% taxa
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-full bg-red-500/10">
-                  <XCircle className="h-5 w-5 text-red-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Abandonos</p>
-                  <p className="text-2xl font-bold">{funnelMetrics?.dropoffs || 0}</p>
-                  <p className="text-xs text-red-600 font-medium">
-                    {funnelMetrics?.dropoffRate || 0}% taxa
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-full bg-orange-500/10">
-                  <MousePointerClick className="h-5 w-5 text-orange-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Cliques no CTA</p>
-                  <p className="text-2xl font-bold">{funnelMetrics?.totalCtaClicks || 0}</p>
-                  <p className="text-xs text-orange-600 font-medium">
-                    {funnelMetrics?.ctaClickRate || 0}% conversão
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sales Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-full bg-emerald-500/10">
-                  <DollarSign className="h-5 w-5 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Faturamento</p>
-                  <p className="text-2xl font-bold">
-                    {(salesMetrics?.totalRevenue || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </p>
-                  <p className="text-xs text-emerald-600 font-medium">
-                    {salesMetrics?.totalSalesCount || 0} vendas aprovadas
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-full bg-violet-500/10">
-                  <Wallet className="h-5 w-5 text-violet-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Ticket Médio (ARPU)</p>
-                  <p className="text-2xl font-bold">
-                    {(salesMetrics?.arpu || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-full bg-amber-500/10">
-                  <Clock className="h-5 w-5 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Vendas Pendentes</p>
-                  <p className="text-2xl font-bold">{salesMetrics?.pendingCount || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-full bg-red-500/10">
-                  <Ban className="h-5 w-5 text-red-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Recusadas / Reembolsadas</p>
-                  <p className="text-2xl font-bold">
-                    {(salesMetrics?.refusedCount || 0) + (salesMetrics?.refundedCount || 0)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Revenue by campaign */}
-        {salesMetrics && salesMetrics.revenueByCampaign.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Faturamento por Campanha (UTM)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Origem (utm_source)</TableHead>
-                      <TableHead>Campanha (utm_campaign)</TableHead>
-                      <TableHead className="text-right">Vendas</TableHead>
-                      <TableHead className="text-right">Faturamento</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {salesMetrics.revenueByCampaign.map((row) => (
-                      <TableRow key={`${row.source}|${row.campaign}`}>
-                        <TableCell>{row.source}</TableCell>
-                        <TableCell>{row.campaign}</TableCell>
-                        <TableCell className="text-right">{row.sales}</TableCell>
-                        <TableCell className="text-right font-medium">
-                          {row.revenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Campaigns panel: Meta Ads spend merged with internal leads/revenue */}
-        {salesMetrics && (
-          <CampaignsPanel
-            revenueByCampaign={salesMetrics.revenueByCampaign}
-            leadsByCampaign={salesMetrics.leadsByCampaign}
-          />
-        )}
-
-        {/* Profile Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="bg-slate-900 border-slate-800 text-slate-100">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-primary/10">
-                  <Users className="h-6 w-6 text-primary" />
+                <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400">
+                  <Users className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total de Respostas</p>
-                  <p className="text-3xl font-bold">{responses.length}</p>
+                  <p className="text-xs text-slate-400">Total de Leads / Respostas</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-white">{responses.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="bg-slate-900 border-slate-800 text-slate-100">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-green-500/10">
-                  <TrendingUp className="h-6 w-6 text-green-500" />
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  <TrendingUp className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Perfil Mais Comum</p>
-                  <p className="text-lg font-bold truncate">
+                  <p className="text-xs text-slate-400">Perfil Mais Comum</p>
+                  <p className="text-base sm:text-lg font-bold text-white truncate">
                     {stats[0]?.profile || '-'}
                   </p>
+                  {stats[0] && (
+                    <p className="text-xs text-emerald-400 font-medium">
+                      {stats[0].count} leads ({stats[0].percentage}%)
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6 space-y-2">
-              <p className="text-sm text-muted-foreground mb-3">Distribuição por Perfil</p>
-              {stats.slice(0, 3).map(({ profile, percentage }) => (
-                <div key={profile} className="flex justify-between text-sm">
-                  <span className="truncate">{profile}</span>
-                  <span className="font-medium">{percentage}%</span>
+          <Card className="bg-slate-900 border-slate-800 text-slate-100">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                  <CheckCircle2 className="h-6 w-6" />
                 </div>
-              ))}
+                <div>
+                  <p className="text-xs text-slate-400">Opt-in de Comunicações</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-white">
+                    {responses.length > 0 ? `${((marketingConsentCount / responses.length) * 100).toFixed(0)}%` : '0%'}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {marketingConsentCount} de {responses.length} aceitaram
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Error message */}
-        {error && (
-          <Card className="border-destructive">
-            <CardContent className="pt-6">
-              <p className="text-destructive">{error}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Responses Table */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Respostas Recentes</CardTitle>
-            {selectedIds.size > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    disabled={isDeletingBatch}
-                  >
-                    {isDeletingBatch ? (
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4 mr-2" />
-                    )}
-                    Excluir {selectedIds.size} selecionado(s)
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir {selectedIds.size} resposta(s)?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Tem certeza que deseja excluir <strong>{selectedIds.size} resposta(s)</strong> selecionada(s)? Esta ação não pode ser desfeita.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleBatchDelete}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        {/* Responses Table Card */}
+        <Card className="bg-slate-900 border-slate-800 text-slate-100">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
+            <CardTitle className="text-lg text-white font-bold">Leads Registrados ({filteredResponses.length})</CardTitle>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                <Input
+                  placeholder="Buscar por nome, email ou perfil..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 bg-slate-950 border-slate-800 text-white text-xs h-9"
+                />
+              </div>
+              {selectedIds.size > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      disabled={isDeletingBatch}
+                      className="h-9"
                     >
-                      Excluir todos
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+                      {isDeletingBatch ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 mr-2" />
+                      )}
+                      Excluir {selectedIds.size}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-slate-900 border-slate-800 text-slate-100">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir {selectedIds.size} resposta(s)?</AlertDialogTitle>
+                      <AlertDialogDescription className="text-slate-400">
+                        Tem certeza que deseja excluir as respostas selecionadas? Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-slate-800 text-slate-200 border-slate-700">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleBatchDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                <RefreshCw className="h-8 w-8 animate-spin text-violet-400" />
               </div>
-            ) : responses.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+            ) : filteredResponses.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 text-sm">
                 Nenhuma resposta encontrada
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">
+                    <TableRow className="border-slate-800 hover:bg-transparent">
+                      <TableHead className="w-[40px]">
                         <Checkbox
-                          checked={responses.length > 0 && selectedIds.size === responses.length}
+                          checked={filteredResponses.length > 0 && selectedIds.size === filteredResponses.length}
                           onCheckedChange={toggleSelectAll}
                           aria-label="Selecionar todos"
                         />
                       </TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>WhatsApp</TableHead>
-                      <TableHead>Perfil Dominante</TableHead>
-                      <TableHead>Score</TableHead>
-                      <TableHead>Mkt</TableHead>
-                      <TableHead>Device</TableHead>
-                      <TableHead>UTM</TableHead>
-                      <TableHead className="w-[50px]">Ações</TableHead>
+                      <TableHead className="text-slate-400">Data</TableHead>
+                      <TableHead className="text-slate-400">Nome</TableHead>
+                      <TableHead className="text-slate-400">Email</TableHead>
+                      <TableHead className="text-slate-400">WhatsApp</TableHead>
+                      <TableHead className="text-slate-400">Perfil Dominante</TableHead>
+                      <TableHead className="text-slate-400">Pontuação</TableHead>
+                      <TableHead className="text-slate-400">Dispositivo</TableHead>
+                      <TableHead className="text-slate-400 text-right w-[80px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {responses.map((response) => (
-                      <TableRow key={response.id} data-state={selectedIds.has(response.id) ? 'selected' : undefined}>
+                    {filteredResponses.map((response) => (
+                      <TableRow key={response.id} className="border-slate-800 hover:bg-slate-800/40">
                         <TableCell>
                           <Checkbox
                             checked={selectedIds.has(response.id)}
@@ -1010,40 +728,32 @@ export default function Admin() {
                             aria-label={`Selecionar ${response.email}`}
                           />
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">
+                        <TableCell className="whitespace-nowrap text-xs text-slate-400">
                           {new Date(response.created_at).toLocaleDateString('pt-BR')}
                         </TableCell>
-                        <TableCell>{response.name || '-'}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">
+                        <TableCell className="font-medium text-white text-sm">{response.name || '-'}</TableCell>
+                        <TableCell className="max-w-[200px] truncate text-slate-300 text-sm">
                           {response.email}
                         </TableCell>
-                        <TableCell>{response.phone || '-'}</TableCell>
+                        <TableCell className="text-slate-300 text-sm whitespace-nowrap">{response.phone || '-'}</TableCell>
                         <TableCell>
-                          <Badge className={getProfileColor(response.dominant_profile)}>
+                          <Badge variant="outline" className={getProfileColor(response.dominant_profile)}>
                             {response.dominant_profile}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <span className="font-medium">{response.dominant_score}</span>
-                          <span className="text-muted-foreground text-xs ml-1">
-                            ({response.dominant_intensity})
+                        <TableCell className="text-sm">
+                          <span className="font-bold text-white">{response.dominant_score}</span>
+                          <span className="text-slate-500 text-xs ml-1">
+                            ({response.dominant_intensity || '-'})
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={response.marketing_consent ? "default" : "outline"} className={response.marketing_consent ? "bg-emerald-600 hover:bg-emerald-700" : "text-muted-foreground"}>
-                            {response.marketing_consent ? "Sim" : "Não"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
+                          <span className="text-xs text-slate-400">
                             {response.device_type || '-'}
-                          </Badge>
+                          </span>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {response.utm_source || '-'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <EditResponseDialog
                               response={response}
                               onSave={handleUpdate}
@@ -1053,7 +763,7 @@ export default function Admin() {
                                 <Button 
                                   variant="ghost" 
                                   size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  className="h-8 w-8 text-slate-400 hover:text-destructive"
                                   disabled={deletingId === response.id}
                                 >
                                   {deletingId === response.id ? (
@@ -1063,15 +773,15 @@ export default function Admin() {
                                   )}
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent className="bg-slate-900 border-slate-800 text-slate-100">
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Excluir resposta?</AlertDialogTitle>
-                                  <AlertDialogDescription>
+                                  <AlertDialogDescription className="text-slate-400">
                                     Tem certeza que deseja excluir a resposta de <strong>{response.name || response.email}</strong>? Esta ação não pode ser desfeita.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogCancel className="bg-slate-800 text-slate-200 border-slate-700">Cancelar</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => handleDelete(response.id, response.email)}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

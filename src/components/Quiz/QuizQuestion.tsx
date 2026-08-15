@@ -1,7 +1,5 @@
-import { useEffect, useRef } from 'react';
 import { Question } from '@/types/quiz.types';
 import { answerOptions } from '@/data/profiles';
-import { trackQuizProgress, trackQuizComplete } from '@/lib/analytics';
 
 interface QuizQuestionProps {
   question: Question;
@@ -30,25 +28,7 @@ export function QuizQuestion({
   onNext,
   onBack
 }: QuizQuestionProps) {
-  const trackedMilestones = useRef<Set<number>>(new Set());
 
-  // Track progress milestones (25%, 50%, 75%) and completion
-  useEffect(() => {
-    const milestones = [25, 50, 75];
-    
-    for (const milestone of milestones) {
-      if (progress >= milestone && !trackedMilestones.current.has(milestone)) {
-        trackedMilestones.current.add(milestone);
-        trackQuizProgress(milestone);
-      }
-    }
-
-    // Track when reaching last question
-    if (isLastQuestion && currentAnswer !== null && !trackedMilestones.current.has(100)) {
-      trackedMilestones.current.add(100);
-      trackQuizComplete();
-    }
-  }, [progress, isLastQuestion, currentAnswer]);
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
