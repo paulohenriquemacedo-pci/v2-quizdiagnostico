@@ -15,8 +15,9 @@ interface CheckoutCTAProps {
  * Every checkout link on the site should render through this component, not a raw <a>. It
  * guarantees two things every checkout CTA needs: the href already carries the current UTM/click
  * params (no onClick redirect logic), and the click is a real, unintercepted native <a> navigation
- * — deliberately NOT calling preventDefault — so third-party click-based pixels (e.g. LowTrack)
- * can detect the outbound checkout link themselves. See CLAUDE.md "Tracking".
+ * — deliberately NOT calling preventDefault — so that if a click-based third-party pixel is ever
+ * added, it can detect the outbound checkout link itself without this component needing changes.
+ * See CLAUDE.md "Tracking".
  */
 export function CheckoutCTA({
   email,

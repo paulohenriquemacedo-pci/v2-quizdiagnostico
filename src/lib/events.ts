@@ -18,10 +18,9 @@ function getDeviceType(): string {
   return /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
 }
 
-// Third-party pixel/event adapter. No-op today: LowTrack's automatic click-based detection is
-// what InitiateCheckout currently relies on for the checkout CTA (see CLAUDE.md Tracking). Wire a
-// real call in here once a platform's manual event-firing API is confirmed, so call sites below
-// don't each need touching individually when that happens.
+// Third-party pixel/event adapter. No-op today: no third-party tracking is installed on the site
+// (see CLAUDE.md Tracking). Wire a real call in here once a platform is chosen and its manual
+// event-firing API is confirmed, so call sites below don't each need touching individually.
 function fireThirdPartyEvent(eventName: string, payload: Record<string, unknown>): void {
   void eventName;
   void payload;
